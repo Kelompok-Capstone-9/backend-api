@@ -51,7 +51,7 @@ func IsSameUser(next echo.HandlerFunc) echo.HandlerFunc {
 			next(c)
 		}
 
-		tokenUserID := claims["userID"].(int)
+		tokenUserID := claims["userID"].(float64)
 		paramUserID, err := strconv.Atoi(c.Param("id"))
 		if err != nil {
 			var response models.GeneralResponse
@@ -61,7 +61,7 @@ func IsSameUser(next echo.HandlerFunc) echo.HandlerFunc {
 			return c.JSON(response.StatusCode, response)
 		}
 
-		isSameUser := tokenUserID == paramUserID
+		isSameUser := int(tokenUserID) == paramUserID
 		if !isSameUser {
 			var response models.GeneralResponse
 			response.StatusCode = http.StatusUnauthorized
