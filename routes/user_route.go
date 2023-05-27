@@ -18,5 +18,5 @@ func AddUserRoutes(e *echo.Echo) {
 	userJWT.GET("", controllers.GetUsersController, m.IsAdmin)
 	userJWT.GET("/:id", controllers.GetUserController, m.IsSameUser)
 	userJWT.PUT("/:id", controllers.EditUserController, m.IsSameUser)
-	userJWT.DELETE("/:id", controllers.DeleteUserController)
+	userJWT.DELETE("/:id", controllers.DeleteUserController, m.IsSameUser)
 }
