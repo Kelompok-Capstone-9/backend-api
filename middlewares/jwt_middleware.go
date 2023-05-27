@@ -30,7 +30,11 @@ func IsAdmin(next echo.HandlerFunc) echo.HandlerFunc {
 		isAdmin := claims["isAdmin"].(bool)
 
 		if !isAdmin {
-			return echo.ErrUnauthorized
+			var response models.GeneralResponse
+			response.StatusCode = http.StatusUnauthorized
+			response.Message = "Unauthorized"
+			response.ErrorReason = "cannot access without permission"
+			return c.JSON(response.StatusCode, response)
 		}
 
 		return next(c)
