@@ -11,5 +11,6 @@ func AddPlanRoutes(e *echo.Echo) {
 	e.GET("/plans", controllers.GetPlansController)
 	e.GET("/plans/:id", controllers.GetPlanController)
 	e.POST("/plans", controllers.CreatePlanController)
-	// e.DELETE("/plans/:id", controllers.DeletePlanController)
+	e.PUT("/plans/:id", controllers.UpdatePlanController)
+	e.DELETE("/plans/:id", controllers.DeletePlanController)
 }

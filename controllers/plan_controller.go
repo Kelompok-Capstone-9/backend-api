@@ -40,21 +40,25 @@ func GetPlanController(c echo.Context) error {
 	var readablePlan models.ReadablePlan
 	var planObject models.Plan
 
+	// Extract the plan ID from the URL parameter
 	planID := c.Param("id")
 
+	// Convert the plan ID string to int
 	planObject.InsertID(planID, &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
+	// Retrieve the plan from the database
 	database.GetPlan(&planObject, &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
-	readablePlan.ToPlanObject(&planObject)
+	// Convert the plan object to a readable format
+	readablePlan.ToReadablePlan(&planObject)
 
 	response.Success(http.StatusOK, "Successfully retrieved plan", readablePlan)
 	return c.JSON(http.StatusOK, response)
@@ -65,19 +69,12 @@ func CreatePlanController(c echo.Context) error {
 	var response models.GeneralResponse
 	var err models.CustomError
 
-	var readablePlan models.ReadablePlan
 	var planObject models.Plan
 
-	err.ErrorMessage = c.Bind(&readablePlan)
+	err.ErrorMessage = c.Bind(&planObject)
 	if err.IsError() {
 		err.StatusCode = http.StatusBadRequest
 		err.ErrorReason = "Invalid request body"
-		response.ErrorOcurred(&err)
-		return c.JSON(response.StatusCode, response)
-	}
-
-	readablePlan.ToPlanObject(&planObject)
-	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
@@ -88,8 +85,63 @@ func CreatePlanController(c echo.Context) error {
 		return c.JSON(response.StatusCode, response)
 	}
 
-	readablePlan.ToPlanObject(&planObject)
+	response.Success(http.StatusCreated, "Successfully created a new plan", planObject)
+	return c.JSON(response.StatusCode, response)
+}
 
-	response.Success(http.StatusCreated, "Successfully created a new plan", readablePlan)
+// Update plan
+func UpdatePlanController(c echo.Context) error {
+	var response models.GeneralResponse
+	var err models.CustomError
+
+	var updatedPlan models.Plan
+
+	planID := c.Param("id")
+
+	err.ErrorMessage = c.Bind(&updatedPlan)
+	if err.IsError() {
+		err.StatusCode = http.StatusBadRequest
+		err.ErrorReason = "Invalid request body"
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	updatedPlan.InsertID(planID, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	database.UpdatePlan(&updatedPlan, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	response.Success(http.StatusOK, "Successfully updated plan", updatedPlan)
+	return c.JSON(response.StatusCode, response)
+}
+
+// Delete plan
+func DeletePlanController(c echo.Context) error {
+	var response models.GeneralResponse
+	var err models.CustomError
+
+	planID := c.Param("id")
+
+	var deletedPlan models.Plan
+	deletedPlan.InsertID(planID, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	database.DeletePlan(&deletedPlan, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	response.Success(http.StatusOK, "Successfully deleted plan", nil)
 	return c.JSON(response.StatusCode, response)
 }

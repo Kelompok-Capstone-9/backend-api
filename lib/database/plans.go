@@ -4,6 +4,7 @@ import (
 	"errors"
 	"gofit-api/configs"
 	"gofit-api/models"
+	"log"
 
 	"gorm.io/gorm"
 )
@@ -34,6 +35,7 @@ func GetPlan(planObject *models.Plan, err *models.CustomError) {
 func CreatePlan(planObject *models.Plan, err *models.CustomError) {
 	result := configs.DB.Create(planObject)
 	if result.Error != nil {
+		log.Println("Error creating plan:", result.Error)
 		if errors.As(result.Error, &mysqlErr) && mysqlErr.Number == 1062 {
 			err.DuplicateKey(result.Error)
 		} else {

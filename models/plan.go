@@ -1,6 +1,7 @@
 package models
 
 import (
+	"gofit-api/constants"
 	"strconv"
 )
 
@@ -41,12 +42,13 @@ func (rp *ReadablePlan) InsertID(itemIDString string, err *CustomError) {
 	}
 }
 
-func (rp *ReadablePlan) ToPlanObject(planObject *Plan) {
-	planObject.ID = uint(rp.ID)
-	planObject.Name = rp.Name
-	planObject.Duration = rp.Duration
-	planObject.Price = rp.Price
-	// planObject.Metadata = *metadata
+func (rp *ReadablePlan) ToReadablePlan(planObject *Plan) {
+	rp.ID = int(planObject.ID)
+	rp.Name = planObject.Name
+	rp.Duration = planObject.Duration
+	rp.Price = planObject.Price
+	rp.ReadableMetadata.CreatedAt = planObject.Metadata.CreatedAt.Format(constants.DATETIME_FORMAT)
+	rp.ReadableMetadata.UpdatedAt = planObject.Metadata.UpdatedAt.Format(constants.DATETIME_FORMAT)
 }
 
 // ToReadablePlanList converts a list of Plan models to a list of ReadablePlan models
