@@ -57,4 +57,5 @@ func InitRoute(e *echo.Echo) {
 	LoadJwtConfig()
 	AddUserRoutes(e)
 	AddPlanRoutes(e)
+	AddMembershipRoutes(e)
 }
