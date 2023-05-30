@@ -238,7 +238,6 @@ func LoginUserController(c echo.Context) error {
 	userObject.ToReadableUser(&readableUser)
 	readableUser.HidePassword()
 
-	
-	response.Success("success login",readableUser, token)
+	response.Success("success login", readableUser, token)
 	return c.JSON(response.StatusCode, response)
 }

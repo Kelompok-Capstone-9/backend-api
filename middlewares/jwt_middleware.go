@@ -48,7 +48,7 @@ func IsSameUser(next echo.HandlerFunc) echo.HandlerFunc {
 		isAdmin := claims["isAdmin"].(bool)
 
 		if isAdmin {
-			next(c)
+			return next(c)
 		}
 
 		tokenUserID := claims["userID"].(float64)
