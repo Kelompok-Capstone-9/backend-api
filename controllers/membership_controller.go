@@ -54,7 +54,7 @@ func GetMembershipController(c echo.Context) error {
 		return c.JSON(response.StatusCode, response)
 	}
 
-	readableMembership.ToMembershipObject(&membershipObject)
+	membershipObject.ToReadableMembership(&readableMembership)
 
 	response.Success(http.StatusOK, "Successfully retrieved membership", readableMembership)
 	return c.JSON(response.StatusCode, response)
@@ -88,8 +88,65 @@ func CreateMembershipController(c echo.Context) error {
 		return c.JSON(response.StatusCode, response)
 	}
 
-	readableMembership.ToMembershipObject(&membershipObject)
+	membershipObject.ToReadableMembership(&readableMembership)
 
 	response.Success(http.StatusCreated, "Successfully created a new membership", readableMembership)
+	return c.JSON(response.StatusCode, response)
+}
+
+// Update membership
+func UpdateMembershipController(c echo.Context) error {
+	var response models.GeneralResponse
+	var err models.CustomError
+
+	var updatedMembership models.Membership
+
+	membershipID := c.Param("id")
+
+	err.ErrorMessage = c.Bind(&updatedMembership)
+	if err.IsError() {
+		err.StatusCode = http.StatusBadRequest
+		err.ErrorReason = "Invalid request body"
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	updatedMembership.InsertID(membershipID, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	database.UpdateMembership(&updatedMembership, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	response.Success(http.StatusOK, "Successfully updated Membership", updatedMembership)
+	return c.JSON(response.StatusCode, response)
+}
+
+// Delete Membership
+func DeleteMembershipController(c echo.Context) error {
+	var response models.GeneralResponse
+	var err models.CustomError
+
+	membershipID := c.Param("id")
+
+	var deletedMembership models.Membership
+	deletedMembership.InsertID(membershipID, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	database.DeleteMembership(&deletedMembership, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	response.Success(http.StatusOK, "Successfully deleted Membership", nil)
 	return c.JSON(response.StatusCode, response)
 }
