@@ -29,6 +29,8 @@ func InitDB() error {
 func MigrateDB() error {
 	return DB.AutoMigrate(
 		models.User{},
+		models.Membership{},
+		models.Plan{},
 	)
 }
 

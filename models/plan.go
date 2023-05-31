@@ -7,11 +7,12 @@ import (
 
 // Plan struct for gorm
 type Plan struct {
-	ID       uint
-	Name     string
-	Duration int
-	Price    int
-	Metadata `gorm:"embedded"`
+	ID          uint `gorm:"column:id"`
+	Name        string
+	Duration    int
+	Price       int
+	Memberships []Membership `gorm:"constraint:OnUpdate:CASCADE"`
+	Metadata    `gorm:"embedded"`
 }
 
 // ReadablePlan represents readable plan data

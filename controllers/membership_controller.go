@@ -4,6 +4,7 @@ import (
 	"gofit-api/lib/database"
 	"gofit-api/models"
 	"net/http"
+	"reflect"
 
 	"github.com/labstack/echo/v4"
 )
@@ -76,13 +77,19 @@ func CreateMembershipController(c echo.Context) error {
 		return c.JSON(response.StatusCode, response)
 	}
 
-	readableMembership.ToMembershipObject(&membershipObject)
+	readableMembership.ToMembershipObject(&membershipObject, &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
 	database.CreateMembership(&membershipObject, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	database.GetMembership(&membershipObject, &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
@@ -99,32 +106,71 @@ func UpdateMembershipController(c echo.Context) error {
 	var response models.GeneralResponse
 	var err models.CustomError
 
-	var updatedMembership models.Membership
+	var readableModifiedMembership models.ReadableMembership
+	var readableMembership models.ReadableMembership
+	var membershipObject models.Membership
 
-	membershipID := c.Param("id")
-
-	err.ErrorMessage = c.Bind(&updatedMembership)
-	if err.IsError() {
-		err.StatusCode = http.StatusBadRequest
-		err.ErrorReason = "Invalid request body"
-		response.ErrorOcurred(&err)
-		return c.JSON(response.StatusCode, response)
-	}
-
-	updatedMembership.InsertID(membershipID, &err)
+	membershipObject.InsertID(c.Param("id"), &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
-	database.UpdateMembership(&updatedMembership, &err)
+	err.ErrorMessage = c.Bind(&readableModifiedMembership)
+	if err.IsError() {
+		err.StatusCode = 400
+		err.ErrorReason = "invalid body request"
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	database.GetMembership(&membershipObject, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+	membershipObject.ToReadableMembership(&readableMembership)
+
+	//replace exist data with new one
+	var membershipPointer *models.ReadableMembership = &readableMembership
+	var modifiedMembershipPointer *models.ReadableMembership = &readableModifiedMembership
+	membershipVal := reflect.ValueOf(membershipPointer).Elem()
+	membershipType := membershipVal.Type()
+
+	editVal := reflect.ValueOf(modifiedMembershipPointer).Elem()
+
+	for i := 0; i < membershipVal.NumField(); i++ {
+		//skip ID, CreatedAt, UpdatedAt field to be edited
+		switch membershipType.Field(i).Name {
+		case "ID":
+			continue
+		case "CreatedAt":
+			continue
+		case "UpdatedAt":
+			continue
+		}
+
+		editField := editVal.Field(i)
+		isSet := editField.IsValid() && !editField.IsZero()
+		if isSet {
+			membershipVal.Field(i).Set(editVal.Field(i))
+		}
+	}
+
+	readableMembership.ToMembershipObject(&membershipObject, &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
-	response.Success(http.StatusOK, "Successfully updated Membership", updatedMembership)
-	return c.JSON(response.StatusCode, response)
+	database.UpdateMembership(&membershipObject, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	response.Success(http.StatusCreated, "success edit membership", readableMembership)
+	return c.JSON(http.StatusOK, response)
 }
 
 // Delete Membership
@@ -132,21 +178,29 @@ func DeleteMembershipController(c echo.Context) error {
 	var response models.GeneralResponse
 	var err models.CustomError
 
-	membershipID := c.Param("id")
+	var membershipObject models.Membership
 
-	var deletedMembership models.Membership
-	deletedMembership.InsertID(membershipID, &err)
+	membershipObject.InsertID(c.Param("id"), &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
-	database.DeleteMembership(&deletedMembership, &err)
+	database.GetMembership(&membershipObject, &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
-	response.Success(http.StatusOK, "Successfully deleted Membership", nil)
-	return c.JSON(response.StatusCode, response)
+	database.DeleteMembership(&membershipObject, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	deletedMembership := map[string]int{
+		"membership_id": int(membershipObject.ID),
+	}
+	response.Success(http.StatusCreated, "success delete membership", deletedMembership)
+	return c.JSON(http.StatusOK, response)
 }

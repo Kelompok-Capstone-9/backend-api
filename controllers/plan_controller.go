@@ -98,6 +98,13 @@ func UpdatePlanController(c echo.Context) error {
 
 	planID := c.Param("id")
 
+	var existingPlan models.Plan
+	existingPlan.InsertID(planID, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
 	err.ErrorMessage = c.Bind(&updatedPlan)
 	if err.IsError() {
 		err.StatusCode = http.StatusBadRequest
@@ -106,19 +113,31 @@ func UpdatePlanController(c echo.Context) error {
 		return c.JSON(response.StatusCode, response)
 	}
 
-	updatedPlan.InsertID(planID, &err)
+	database.GetPlan(&existingPlan, &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
-	database.UpdatePlan(&updatedPlan, &err)
+	if updatedPlan.Name != "" {
+		existingPlan.Name = updatedPlan.Name
+	}
+
+	if updatedPlan.Duration != 0 {
+		existingPlan.Duration = updatedPlan.Duration
+	}
+
+	if updatedPlan.Price != 0 {
+		existingPlan.Price = updatedPlan.Price
+	}
+
+	database.UpdatePlan(&existingPlan, &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
-	response.Success(http.StatusOK, "Successfully updated plan", updatedPlan)
+	response.Success(http.StatusOK, "Successfully updated plan", existingPlan)
 	return c.JSON(response.StatusCode, response)
 }
 
@@ -127,21 +146,29 @@ func DeletePlanController(c echo.Context) error {
 	var response models.GeneralResponse
 	var err models.CustomError
 
-	planID := c.Param("id")
+	var planObject models.Plan
 
-	var deletedPlan models.Plan
-	deletedPlan.InsertID(planID, &err)
+	planObject.InsertID(c.Param("id"), &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
-	database.DeletePlan(&deletedPlan, &err)
+	database.GetPlan(&planObject, &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
-	response.Success(http.StatusOK, "Successfully deleted plan", nil)
-	return c.JSON(response.StatusCode, response)
+	database.DeletePlan(&planObject, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	deletedPlan := map[string]int{
+		"plan_id": int(planObject.ID),
+	}
+	response.Success(http.StatusCreated, "success delete plan", deletedPlan)
+	return c.JSON(http.StatusOK, response)
 }

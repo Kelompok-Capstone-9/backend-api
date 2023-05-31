@@ -21,7 +21,7 @@ func GetMemberships(offset, limit int, err *models.CustomError) ([]models.Readab
 }
 
 func GetMembership(membershipObject *models.Membership, err *models.CustomError) {
-	result := configs.DB.First(membershipObject)
+	result := configs.DB.Preload("User").Preload("Plan").First(membershipObject)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			err.NoRecordFound(result.Error)

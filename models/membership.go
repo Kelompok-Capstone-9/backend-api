@@ -1,19 +1,21 @@
 package models
 
 import (
+	"gofit-api/constants"
 	"strconv"
 	"time"
 )
 
 // Membership Object for gorm
 type Membership struct {
-	ID        uint      `json:"id"`
-	UserID    uint      `json:"user_id"`
-	PlanID    uint      `json:"plan_id"`
+	ID        uint      `gorm:"column:id"`
+	UserID    uint      `gorm:"column:user_id"`
+	User      User      `gorm:"constraint:OnUpdate:CASCADE"`
+	PlanID    uint      `gorm:"column:plan_id"`
+	Plan      Plan      `gorm:"constraint:OnUpdate:CASCADE"`
 	StartDate time.Time `json:"start_date"`
 	EndDate   time.Time `json:"end_date"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	Metadata  `gorm:"embedded"`
 }
 
 func (m *Membership) InsertID(itemIDString string, err *CustomError) {
@@ -27,24 +29,38 @@ func (m *Membership) InsertID(itemIDString string, err *CustomError) {
 }
 
 func (m *Membership) ToReadableMembership(readableMembership *ReadableMembership) {
+	readableUserMetadata := m.User.ToReadableMetadata()
+	readableMembershipMetadata := m.ToReadableMetadata()
+	readablePlanMetadata := m.Plan.ToReadableMetadata()
 	readableMembership.ID = int(m.ID)
-	readableMembership.UserID = int(m.UserID)
-	readableMembership.PlanID = int(m.PlanID)
-	readableMembership.StartDate = m.StartDate
-	readableMembership.EndDate = m.EndDate
-	readableMembership.CreatedAt = m.CreatedAt
-	readableMembership.UpdatedAt = m.UpdatedAt
+	readableMembership.User.ID = int(m.User.ID)
+	readableMembership.User.Name = m.User.Name
+	readableMembership.User.Email = m.User.Email
+	readableMembership.User.Password = "********"
+	readableMembership.User.Gender = string(m.User.Gender)
+	readableMembership.User.Height = m.User.Height
+	readableMembership.User.GoalHeight = m.User.GoalHeight
+	readableMembership.User.Weight = m.User.Weight
+	readableMembership.User.GoalWeight = m.User.GoalWeight
+	readableMembership.User.ReadableMetadata = *readableUserMetadata
+	readableMembership.Plan.ID = int(m.Plan.ID)
+	readableMembership.Plan.Name = m.Plan.Name
+	readableMembership.Plan.Duration = m.Plan.Duration
+	readableMembership.Plan.Price = m.Plan.Price
+	readableMembership.Plan.ReadableMetadata = *readableMembershipMetadata
+	readableMembership.StartDate = m.StartDate.Format(constants.DATETIME_FORMAT)
+	readableMembership.EndDate = m.EndDate.Format(constants.DATETIME_FORMAT)
+	readableMembership.ReadableMetadata = *readablePlanMetadata
 }
 
 // ReadableMembership Data or Readable data
 type ReadableMembership struct {
-	ID        int       `json:"id"`
-	UserID    int       `json:"user_id"`
-	PlanID    int       `json:"plan_id"`
-	StartDate time.Time `json:"start_date"`
-	EndDate   time.Time `json:"end_date"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID               int          `json:"id"`
+	User             ReadableUser `json:"user"`
+	Plan             ReadablePlan `json:"plan"`
+	StartDate        string       `json:"start_date"`
+	EndDate          string       `json:"end_date"`
+	ReadableMetadata `json:"metadata"`
 }
 
 // convert id string to int
@@ -56,14 +72,25 @@ func (rm *ReadableMembership) InsertID(itemIDString string, err *CustomError) {
 	}
 }
 
-func (rm *ReadableMembership) ToMembershipObject(membershipObject *Membership) {
+func (rm *ReadableMembership) ToMembershipObject(membershipObject *Membership, err *CustomError) {
 	membershipObject.ID = uint(rm.ID)
-	membershipObject.UserID = uint(rm.UserID)
-	membershipObject.PlanID = uint(rm.PlanID)
-	membershipObject.StartDate = rm.StartDate
-	membershipObject.EndDate = rm.EndDate
-	membershipObject.CreatedAt = rm.CreatedAt
-	membershipObject.UpdatedAt = rm.UpdatedAt
+	membershipObject.UserID = uint(rm.User.ID)
+	membershipObject.PlanID = uint(rm.Plan.ID)
+	var started, ended time.Time
+	started, err.ErrorMessage = time.Parse(constants.DATETIME_FORMAT, rm.StartDate)
+	if err.ErrorMessage != nil {
+		err.StatusCode = 400
+		err.ErrorReason = "fail to parse metadata time"
+	}
+	ended, err.ErrorMessage = time.Parse(constants.DATETIME_FORMAT, rm.EndDate)
+	if err.ErrorMessage != nil {
+		err.StatusCode = 400
+		err.ErrorReason = "fail to parse metadata time"
+	}
+	membershipObject.StartDate = started
+	membershipObject.EndDate = ended
+	// membershipObject.CreatedAt = rm.CreatedAt
+	// membershipObject.UpdatedAt = rm.UpdatedAt
 }
 
 func ToReadableMembershipList(membershipModelList []Membership) []ReadableMembership {
