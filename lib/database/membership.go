@@ -11,7 +11,7 @@ import (
 func GetMemberships(offset, limit int, err *models.CustomError) ([]models.ReadableMembership, int) {
 	var membershipObjectList []models.Membership
 
-	result := configs.DB.Offset(offset).Limit(limit).Find(&membershipObjectList)
+	result := configs.DB.Preload("User").Preload("Plan").Offset(offset).Limit(limit).Find(&membershipObjectList)
 	if result.Error != nil {
 		err.FailRetrieveDataFromDB(result.Error)
 		return nil, 0
