@@ -1,9 +1,5 @@
 package models
 
-import (
-	"errors"
-)
-
 type CustomError struct {
 	StatusCode   int
 	ErrorReason  string
@@ -12,12 +8,6 @@ type CustomError struct {
 
 func (ce *CustomError) IsError() bool {
 	return ce.ErrorMessage != nil
-}
-
-func (ce *CustomError) NewError(errorCode int, errorMessage error, errorReason string) {
-	ce.StatusCode = errorCode
-	ce.ErrorMessage = errorMessage
-	ce.ErrorReason = errorReason
 }
 
 func (ce *CustomError) ErrParseIdParam(err error) {
@@ -38,26 +28,16 @@ func (ce *CustomError) FailGenerateGenderType(err error) {
 	ce.ErrorMessage = err
 }
 
-func (ce *CustomError) FailLogin() {
+func (ce *CustomError) FailLogin(err error) {
 	ce.StatusCode = 401
-	ce.ErrorMessage = errors.New("fail to login")
-	ce.ErrorReason = "wrong email or password"
+	ce.ErrorReason = "login failed"
+	ce.ErrorMessage = err
 }
 
 func (ce *CustomError) FailLoginWrongPassword(err error) {
 	ce.StatusCode = 401
 	ce.ErrorReason = "login failed: wrong password"
 	ce.ErrorMessage = err
-}
-
-func (ce *CustomError) ErrBind(errorReasong string) {
-	ce.StatusCode = 400
-	ce.ErrorReason = errorReasong
-}
-
-func (ce *CustomError) ErrValidate(errorReasong string) {
-	ce.StatusCode = 400
-	ce.ErrorReason = errorReasong
 }
 
 func (ce *CustomError) DuplicateKey(err error) {
