@@ -1,8 +1,8 @@
 package controllers
 
 import (
-	"errors"
 	"net/http"
+	"net/mail"
 	"reflect"
 
 	"gofit-api/lib/database"
@@ -69,8 +69,15 @@ func CreateUserController(c echo.Context) error {
 
 	err.ErrorMessage = c.Bind(&readableUser)
 	if err.IsError() {
-		err.StatusCode = 400
-		err.ErrorReason = "invalid request body"
+		err.ErrBind("invalid body request")
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	// validate user field
+	err.ErrorMessage = readableUser.Validate()
+	if err.IsError() {
+		err.ErrValidate("invalid field or email. field cant be blank or email must containt @email.com")
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
@@ -212,6 +219,15 @@ func LoginUserController(c echo.Context) error {
 		return c.JSON(response.StatusCode, response)
 	}
 
+	// validate email
+	_, emailError := mail.ParseAddress(email)
+	if emailError != nil {
+		response.StatusCode = http.StatusBadRequest
+		response.Message = "invalid email"
+		response.ErrorReason = email + " is not an email"
+		return c.JSON(response.StatusCode, response)
+	}
+
 	userObject := database.Login(email, &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
@@ -220,7 +236,7 @@ func LoginUserController(c echo.Context) error {
 
 	match := userObject.MatchingPassword(password)
 	if !match {
-		err.FailLoginWrongPassword(errors.New("fail login"))
+		err.FailLogin()
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
@@ -238,7 +254,6 @@ func LoginUserController(c echo.Context) error {
 	userObject.ToReadableUser(&readableUser)
 	readableUser.HidePassword()
 
-	
-	response.Success("success login",readableUser, token)
+	response.Success("success login", readableUser, token)
 	return c.JSON(response.StatusCode, response)
 }

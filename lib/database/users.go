@@ -65,10 +65,11 @@ func Login(email string, err *models.CustomError) models.User {
 	result := configs.DB.Where("email = ?", email).First(&userObject)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			err.NoRecordFound(gorm.ErrRecordNotFound)
+			err.FailLogin()
 			return models.User{}
 		} else {
-			err.FailLogin(result.Error)
+			err.ErrorMessage = result.Error
+			err.FailRetrieveDataFromDB(result.Error)
 			return models.User{}
 		}
 	}
