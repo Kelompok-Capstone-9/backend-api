@@ -43,7 +43,7 @@ func CreateMembership(membershipObject *models.Membership, err *models.CustomErr
 }
 
 func UpdateMembership(membershipObject *models.Membership, err *models.CustomError) {
-	result := configs.DB.Save(membershipObject)
+	result := configs.DB.Model(&models.Membership{}).Where("id = ?", membershipObject.ID).Updates(membershipObject)
 	if result.Error != nil {
 		err.FailEditDataInDB(result.Error)
 	}
