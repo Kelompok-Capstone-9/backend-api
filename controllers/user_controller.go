@@ -45,6 +45,10 @@ func GetUserController(c echo.Context) error {
 	var userObject models.User
 
 	userObject.InsertID(c.Param("id"), &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
 
 	database.GetUser(&userObject, &err)
 	if err.IsError() {
