@@ -213,32 +213,32 @@ func DeleteUserController(c echo.Context) error {
 func LoginUserController(c echo.Context) error {
 	var response models.LoginResponse
 	var err models.CustomError
+	var loginReq models.LoginRequest
 
-	email := c.FormValue("email")
-	password := c.FormValue("password")
-	if email == "" || password == "" {
-		response.StatusCode = http.StatusBadRequest
-		response.Message = "email or password is null"
-		response.ErrorReason = "email or password field is blank"
+	err.ErrorMessage = c.Bind(loginReq)
+	if err.IsError() {
+		err.StatusCode = 400
+		err.ErrorReason = "invalid body request"
+		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
 	// validate email
-	_, emailError := mail.ParseAddress(email)
+	_, emailError := mail.ParseAddress(loginReq.Email)
 	if emailError != nil {
 		response.StatusCode = http.StatusBadRequest
 		response.Message = "invalid email"
-		response.ErrorReason = email + " is not an email"
+		response.ErrorReason = loginReq.Email + " is not an email"
 		return c.JSON(response.StatusCode, response)
 	}
 
-	userObject := database.Login(email, &err)
+	userObject := database.Login(loginReq.Email, &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
-	match := userObject.MatchingPassword(password)
+	match := userObject.MatchingPassword(loginReq.Password)
 	if !match {
 		err.FailLogin()
 		response.ErrorOcurred(&err)
