@@ -148,6 +148,16 @@ func EditUserController(c echo.Context) error {
 		switch userType.Field(i).Name {
 		case "ID":
 			continue
+		case "Password":
+			if readableModifiedUser.Password != "" {
+				userObject.HashingPassword(&err)
+				if err.IsError() {
+					response.ErrorOcurred(&err)
+					return c.JSON(response.StatusCode, response)
+				}
+			} else {
+				continue
+			}
 		case "CreatedAt":
 			continue
 		case "UpdatedAt":
