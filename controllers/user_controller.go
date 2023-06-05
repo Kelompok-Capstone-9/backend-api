@@ -215,7 +215,7 @@ func LoginUserController(c echo.Context) error {
 	var err models.CustomError
 	var loginReq models.LoginRequest
 
-	err.ErrorMessage = c.Bind(loginReq)
+	err.ErrorMessage = c.Bind(&loginReq)
 	if err.IsError() {
 		err.StatusCode = 400
 		err.ErrorReason = "invalid body request"
