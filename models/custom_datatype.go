@@ -19,3 +19,19 @@ func GenerateGenderType(genderString string) (Gender, error) {
 	}
 	return "", errors.New("invalid gender")
 }
+
+type ClassType string
+
+const (
+	Offline ClassType = "offline"
+	Online  ClassType = "online"
+)
+
+func GenerateClassType(classTypeString string) (ClassType, error) {
+	if classTypeString == string(Offline) {
+		return Offline, nil
+	} else if classTypeString == string(Online) {
+		return Online, nil
+	}
+	return "", errors.New("invalid class type")
+}

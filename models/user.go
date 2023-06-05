@@ -23,14 +23,14 @@ type User struct {
 	Metadata   `gorm:"embedded"`
 }
 
-func (u *User) InsertID(itemIDString string, err *CustomError) {
-	var itemID int
-	itemID, err.ErrorMessage = strconv.Atoi(itemIDString)
+func (u *User) InsertID(userIDString string, err *CustomError) {
+	var userID int
+	userID, err.ErrorMessage = strconv.Atoi(userIDString)
 	if err.IsError() {
 		err.StatusCode = 400
 		err.ErrorReason = "invalid id paramater"
 	}
-	u.ID = uint(itemID)
+	u.ID = uint(userID)
 }
 
 func (u *User) HashingPassword(err *CustomError) {
@@ -75,11 +75,11 @@ type ReadableUser struct {
 }
 
 // convert id string to int
-func (ru *ReadableUser) InsertID(itemIDString string, err *CustomError) {
-	ru.ID, err.ErrorMessage = strconv.Atoi(itemIDString)
+func (ru *ReadableUser) InsertID(userIDString string, err *CustomError) {
+	ru.ID, err.ErrorMessage = strconv.Atoi(userIDString)
 	if err.IsError() {
 		err.StatusCode = 400
-		err.ErrorReason = "invalid id paramater : " + itemIDString
+		err.ErrorReason = "invalid id paramater : " + userIDString
 	}
 }
 
