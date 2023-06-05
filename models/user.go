@@ -130,7 +130,7 @@ func (ru *ReadableUser) Validate() error {
 
 	_, emailError := mail.ParseAddress(ru.Email)
 	if emailError != nil {
-		return errors.New("invalid email" + ru.Email)
+		return errors.New("invalid email " + ru.Email)
 	}
 
 	if ru.Gender != "pria" && ru.Gender != "wanita" {
