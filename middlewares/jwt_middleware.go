@@ -17,7 +17,7 @@ func CreateToken(userID int, email string, isAdmin bool) (string, error) {
 	claims["userID"] = userID
 	claims["email"] = email
 	claims["isAdmin"] = isAdmin
-	claims["exp"] = time.Now().Add(time.Hour * 1).Unix()
+	claims["exp"] = time.Now().Add(time.Hour * 12).Unix()
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(configs.AppConfig.JWTKey))

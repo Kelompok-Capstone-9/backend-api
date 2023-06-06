@@ -19,14 +19,14 @@ func GetUsersController(c echo.Context) error {
 	var err models.CustomError
 
 	page.PageString = c.QueryParam("page")
-	page.ConvertPageToINT(&err)
+	page.ConvertPageStringToINT(&err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
-	offset, limit := page.CalcOffsetLimit()
-	users, totalData := database.GetUsers(offset, limit, &err)
+	page.CalcOffsetLimit()
+	users, totalData := database.GetUsers(page.Offset, page.Limit, &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
@@ -148,6 +148,16 @@ func EditUserController(c echo.Context) error {
 		switch userType.Field(i).Name {
 		case "ID":
 			continue
+		case "Password":
+			if readableModifiedUser.Password != "" {
+				userObject.HashingPassword(&err)
+				if err.IsError() {
+					response.ErrorOcurred(&err)
+					return c.JSON(response.StatusCode, response)
+				}
+			} else {
+				continue
+			}
 		case "CreatedAt":
 			continue
 		case "UpdatedAt":
@@ -215,7 +225,7 @@ func LoginUserController(c echo.Context) error {
 	var err models.CustomError
 	var loginReq models.LoginRequest
 
-	err.ErrorMessage = c.Bind(loginReq)
+	err.ErrorMessage = c.Bind(&loginReq)
 	if err.IsError() {
 		err.StatusCode = 400
 		err.ErrorReason = "invalid body request"

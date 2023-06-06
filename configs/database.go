@@ -3,6 +3,7 @@ package configs
 import (
 	"fmt"
 	"gofit-api/models"
+	"time"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -29,23 +30,50 @@ func InitDB() error {
 func MigrateDB() error {
 	return DB.AutoMigrate(
 		models.User{},
+		models.Class{},
+		models.Location{},
 	)
 }
 
 func SeedDB() error {
 	var (
 		admin = models.User{
-			Name:     "M Fikri Ramadhan",
-			Email:    "fikri@gmail.com",
-			Password: "123",
+			Name:     "GoFit Administrator",
+			Email:    "gofit@gofit.com",
+			Password: "gofitadmin123",
 			Gender:   "pria",
 			Height:   158,
 			Weight:   60,
 			IsAdmin:  true,
 		}
+
+		offlineJakarta = models.Location{
+			Name:      "Offline",
+			City:      "Depok",
+			Latitude:  "1572619562112",
+			Longitude: "1527129572712",
+			ClassID:   1,
+		}
+
+		offlineClass = models.Class{
+			Name:        "Cardio Class",
+			Description: "Kelas kebugaran untuk mengurangi lemak dalam tubuh",
+			ClassType:   models.Offline,
+			StartedAt:   time.Now(),
+			Location:    models.Location{ID: 1},
+		}
 	)
 	admin.HashingPassword(&models.CustomError{})
 	err := DB.FirstOrCreate(&admin).Error
+	if err != nil {
+		return err
+	}
 
+	err = DB.FirstOrCreate(&offlineClass).Error
+	if err != nil {
+		return err
+	}
+
+	err = DB.FirstOrCreate(&offlineJakarta).Error
 	return err
 }

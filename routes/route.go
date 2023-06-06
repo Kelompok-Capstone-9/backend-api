@@ -56,4 +56,6 @@ func InitRoute(e *echo.Echo) {
 	middlewares.Logger(e)
 	LoadJwtConfig()
 	AddUserRoutes(e)
+	AddLocationRoutes(e)
+	AddClassRoutes(e)
 }

@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"strconv"
 )
 
 type Instructor struct {
@@ -10,16 +9,6 @@ type Instructor struct {
 	Name        string
 	Description string
 	Metadata    `gorm:"embedded"`
-}
-
-func (i *Instructor) InsertID(instructorIDString string, err *CustomError) {
-	var instructorID int
-	instructorID, err.ErrorMessage = strconv.Atoi(instructorIDString)
-	if err.IsError() {
-		err.StatusCode = 400
-		err.ErrorReason = "invalid id paramater"
-	}
-	i.ID = uint(instructorID)
 }
 
 func (i *Instructor) ToReadableInstructor(readableInstructor *ReadableInstructor) {
@@ -50,6 +39,13 @@ func (ri *ReadableInstructor) Validate() error {
 		return errors.New("invalid name")
 	case ri.Description == "":
 		return errors.New("invalid description")
+	}
+	return nil
+}
+
+func (ri *ReadableInstructor) EditValidate() error {
+	if ri.Name == "" && ri.Description == "" {
+		return errors.New("invalid name and description field")
 	}
 	return nil
 }
