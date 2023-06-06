@@ -15,14 +15,14 @@ func GetPlansController(c echo.Context) error {
 	var err models.CustomError
 
 	page.PageString = c.QueryParam("page")
-	page.ConvertPageToINT(&err)
+	page.ConvertPageStringToINT(&err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
-	offset, limit := page.CalcOffsetLimit()
-	plans, totalData := database.GetPlans(offset, limit, &err)
+	page.CalcOffsetLimit()
+	plans, totalData := database.GetPlans(page.Offset, page.Limit, &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)

@@ -19,14 +19,14 @@ func GetUsersController(c echo.Context) error {
 	var err models.CustomError
 
 	page.PageString = c.QueryParam("page")
-	page.ConvertPageToINT(&err)
+	page.ConvertPageStringToINT(&err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
-	offset, limit := page.CalcOffsetLimit()
-	users, totalData := database.GetUsers(offset, limit, &err)
+	page.CalcOffsetLimit()
+	users, totalData := database.GetUsers(page.Offset, page.Limit, &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)

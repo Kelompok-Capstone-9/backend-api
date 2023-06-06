@@ -73,15 +73,15 @@ func IsSameUser(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
-// func ExtractTokenUserID(e echo.Context) float64 {
-// 	user := e.Get("user").(*jwt.Token)
-// 	if user.Valid {
-// 		claims := user.Claims.(jwt.MapClaims)
-// 		userId := claims["userID"].(float64)
-// 		return userId
-// 	}
-// 	return 0
-// }
+func ExtractTokenUserID(e echo.Context) float64 {
+	user := e.Get("user").(*jwt.Token)
+	if user.Valid {
+		claims := user.Claims.(jwt.MapClaims)
+		userId := claims["userID"].(float64)
+		return userId
+	}
+	return 0
+}
 
 // func ExtractTokenIsAdmin(e echo.Context) bool {
 // 	user := e.Get("user").(*jwt.Token)

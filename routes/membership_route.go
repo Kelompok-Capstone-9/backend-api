@@ -9,13 +9,17 @@ import (
 )
 
 func AddMembershipRoutes(e *echo.Echo) {
+
 	membershipJWT := e.Group("/memberships")
 	membershipJWT.Use(echojwt.WithConfig(jwtConfig))
-	membershipJWT.Use(m.IsAdmin)
+	membershipJWT.GET("/mymembership", controllers.MyMembershipController)
 
-	membershipJWT.GET("", controllers.GetMembershipsController)
-	membershipJWT.GET("/:id", controllers.GetMembershipController, m.IsSameUser)
-	membershipJWT.POST("", controllers.CreateMembershipController)
-	membershipJWT.PUT("/:id", controllers.UpdateMembershipController)
-	membershipJWT.DELETE("/:id", controllers.DeleteMembershipController)
+	membershipJWT.GET("", controllers.GetMembershipsController, m.IsAdmin)
+	membershipJWT.GET("/:id", controllers.GetMembershipController, m.IsAdmin)
+	membershipJWT.POST("", controllers.CreateMembershipController, m.IsAdmin)
+	membershipJWT.PUT("/:id", controllers.UpdateMembershipController, m.IsAdmin)
+	membershipJWT.DELETE("/:id", controllers.DeleteMembershipController, m.IsAdmin)
+
+	membershipJWT.POST("/join/:plan_id", controllers.JoinMembershipController)
+
 }

@@ -9,12 +9,11 @@ import (
 )
 
 func AddPlanRoutes(e *echo.Echo) {
-	planJWT := e.Group("/plans")
-	planJWT.Use(echojwt.WithConfig(jwtConfig))
-	planJWT.Use(m.IsAdmin)
+	e.GET("/plans/all", controllers.GetPlansController)
+	e.GET("/plans/id", controllers.GetPlanController)
 
-	planJWT.GET("", controllers.GetPlansController)
-	planJWT.GET("/:id", controllers.GetPlanController)
+	planJWT := e.Group("/plans")
+	planJWT.Use(echojwt.WithConfig(jwtConfig), m.IsAdmin)
 	planJWT.POST("", controllers.CreatePlanController)
 	planJWT.PUT("/:id", controllers.UpdatePlanController)
 	planJWT.DELETE("/:id", controllers.DeletePlanController)

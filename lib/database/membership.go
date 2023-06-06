@@ -31,6 +31,35 @@ func GetMembership(membershipObject *models.Membership, err *models.CustomError)
 	}
 }
 
+func GetMembershipByUserID(userID uint, membershipObject *models.Membership, err *models.CustomError) {
+	result := configs.DB.Where("user_id = ?", userID).Preload("User").Preload("Plan").First(membershipObject)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			err.NoRecordFound(result.Error)
+		} else {
+			err.FailRetrieveDataFromDB(result.Error)
+		}
+	}
+
+}
+
+func GetMembershipByUserName(nameUser string, err *models.CustomError) ([]models.ReadableMembership, int) {
+	usersID := []int{}
+	configs.DB.Model(&models.User{}).Select("id").Where("name LIKE ?", nameUser).Find(&usersID)
+
+	var membershipObjectList []models.Membership
+	result := configs.DB.Where("user_id IN ?", usersID).Preload("User").Preload("Plan").Find(&membershipObjectList)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			err.NoRecordFound(result.Error)
+		} else {
+			err.FailRetrieveDataFromDB(result.Error)
+		}
+	}
+
+	return models.ToReadableMembershipList(membershipObjectList), int(result.RowsAffected)
+}
+
 func CreateMembership(membershipObject *models.Membership, err *models.CustomError) {
 	result := configs.DB.Create(membershipObject)
 	if result.Error != nil {

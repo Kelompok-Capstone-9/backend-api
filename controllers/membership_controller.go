@@ -2,9 +2,11 @@ package controllers
 
 import (
 	"gofit-api/lib/database"
+	"gofit-api/middlewares"
 	"gofit-api/models"
 	"net/http"
 	"reflect"
+	"time"
 
 	"github.com/labstack/echo/v4"
 )
@@ -12,24 +14,42 @@ import (
 // GetMembershipsController retrieves all memberships
 func GetMembershipsController(c echo.Context) error {
 	var response models.GeneralListResponse
-	var page models.Pages
+	var param models.GeneralParameter
 	var err models.CustomError
+	var memberships []models.ReadableMembership
+	var totalData int
 
-	page.PageString = c.QueryParam("page")
-	page.ConvertPageToINT(&err)
+	param.Page.PageString = c.QueryParam("page")
+	param.Page.ConvertPageStringToINT(&err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
-	offset, limit := page.CalcOffsetLimit()
-	memberships, totalData := database.GetMemberships(offset, limit, &err)
-	if err.IsError() {
-		response.ErrorOcurred(&err)
-		return c.JSON(response.StatusCode, response)
+	param.Page.CalcOffsetLimit()
+	param.Name = c.QueryParam("name")
+	switch {
+	case param.Name != "":
+		param.NameQueryForm() // change name paramater to query form e.g: andy to %andy%
+		memberships, totalData = database.GetMembershipByUserName(param.Name, &err)
+		if err.IsError() {
+			response.ErrorOcurred(&err)
+			return c.JSON(response.StatusCode, response)
+		}
+	default:
+		memberships, totalData = database.GetMemberships(param.Page.Offset, param.Page.Limit, &err)
+		if err.IsError() {
+			response.ErrorOcurred(&err)
+			return c.JSON(response.StatusCode, response)
+		}
 	}
+	// memberships, totalData := database.GetMemberships(param.Page.Offset, param.Page.Limit, &err)
+	// if err.IsError() {
+	// 	response.ErrorOcurred(&err)
+	// 	return c.JSON(response.StatusCode, response)
+	// }
 
-	response.Success("Successfully retrieved memberships", page.Page, totalData, memberships)
+	response.Success("Successfully retrieved memberships", param.Page.Page, totalData, memberships)
 	return c.JSON(http.StatusOK, response)
 }
 
@@ -98,6 +118,27 @@ func CreateMembershipController(c echo.Context) error {
 	membershipObject.ToReadableMembership(&readableMembership)
 
 	response.Success(http.StatusCreated, "Successfully created a new membership", readableMembership)
+	return c.JSON(response.StatusCode, response)
+}
+
+// Get Membership by user ID
+func MyMembershipController(c echo.Context) error {
+	UserID := middlewares.ExtractTokenUserID(c)
+	var response models.GeneralResponse
+	var err models.CustomError
+
+	var readableMembership models.ReadableMembership
+	var membershipObject models.Membership
+
+	database.GetMembershipByUserID(uint(UserID), &membershipObject, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	membershipObject.ToReadableMembership(&readableMembership)
+
+	response.Success(http.StatusOK, "Successfully retrieved membership", readableMembership)
 	return c.JSON(response.StatusCode, response)
 }
 
@@ -203,4 +244,47 @@ func DeleteMembershipController(c echo.Context) error {
 	}
 	response.Success(http.StatusCreated, "success delete membership", deletedMembership)
 	return c.JSON(http.StatusOK, response)
+}
+
+func JoinMembershipController(c echo.Context) error {
+
+	var response models.GeneralResponse
+	var err models.CustomError
+
+	var readableMembership models.ReadableMembership
+	var membershipObject models.Membership
+	var plan models.Plan
+
+	userID := middlewares.ExtractTokenUserID(c)
+	planID := models.IDParameter{IDString: c.Param("plan_id")}
+	planID.ConvertIDStringToINT(&err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	plan.ID = uint(planID.ID)
+	database.GetPlan(&plan, &err)
+
+	membershipObject.UserID = uint(userID)
+	membershipObject.PlanID = plan.ID
+	membershipObject.StartDate = time.Now()
+	membershipObject.EndDate = time.Now().AddDate(0, 0, plan.Duration)
+
+	database.CreateMembership(&membershipObject, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	database.GetMembership(&membershipObject, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	membershipObject.ToReadableMembership(&readableMembership)
+
+	response.Success(http.StatusCreated, "Successfully created a new membership", readableMembership)
+	return c.JSON(response.StatusCode, response)
 }
