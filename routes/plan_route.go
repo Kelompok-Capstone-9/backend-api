@@ -10,7 +10,7 @@ import (
 
 func AddPlanRoutes(e *echo.Echo) {
 	e.GET("/plans/all", controllers.GetPlansController)
-	e.GET("/plans/id", controllers.GetPlanController)
+	e.GET("/plans/:id", controllers.GetPlanController)
 
 	planJWT := e.Group("/plans")
 	planJWT.Use(echojwt.WithConfig(jwtConfig), m.IsAdmin)
