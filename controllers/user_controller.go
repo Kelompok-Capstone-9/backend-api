@@ -1,8 +1,8 @@
 package controllers
 
 import (
-	"errors"
 	"net/http"
+	"net/mail"
 	"reflect"
 
 	"gofit-api/lib/database"
@@ -45,6 +45,10 @@ func GetUserController(c echo.Context) error {
 	var userObject models.User
 
 	userObject.InsertID(c.Param("id"), &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
 
 	database.GetUser(&userObject, &err)
 	if err.IsError() {
@@ -69,8 +73,15 @@ func CreateUserController(c echo.Context) error {
 
 	err.ErrorMessage = c.Bind(&readableUser)
 	if err.IsError() {
-		err.StatusCode = 400
-		err.ErrorReason = "invalid request body"
+		err.ErrBind("invalid body request")
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	// validate user field
+	err.ErrorMessage = readableUser.Validate()
+	if err.IsError() {
+		err.ErrValidate("invalid field or email. field cant be blank or email must containt @email.com")
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
@@ -137,6 +148,16 @@ func EditUserController(c echo.Context) error {
 		switch userType.Field(i).Name {
 		case "ID":
 			continue
+		case "Password":
+			if readableModifiedUser.Password != "" {
+				userObject.HashingPassword(&err)
+				if err.IsError() {
+					response.ErrorOcurred(&err)
+					return c.JSON(response.StatusCode, response)
+				}
+			} else {
+				continue
+			}
 		case "CreatedAt":
 			continue
 		case "UpdatedAt":
@@ -202,25 +223,34 @@ func DeleteUserController(c echo.Context) error {
 func LoginUserController(c echo.Context) error {
 	var response models.LoginResponse
 	var err models.CustomError
+	var loginReq models.LoginRequest
 
-	email := c.FormValue("email")
-	password := c.FormValue("password")
-	if email == "" || password == "" {
-		response.StatusCode = http.StatusBadRequest
-		response.Message = "email or password is null"
-		response.ErrorReason = "email or password field is blank"
+	err.ErrorMessage = c.Bind(&loginReq)
+	if err.IsError() {
+		err.StatusCode = 400
+		err.ErrorReason = "invalid body request"
+		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
-	userObject := database.Login(email, &err)
+	// validate email
+	_, emailError := mail.ParseAddress(loginReq.Email)
+	if emailError != nil {
+		response.StatusCode = http.StatusBadRequest
+		response.Message = "invalid email"
+		response.ErrorReason = loginReq.Email + " is not an email"
+		return c.JSON(response.StatusCode, response)
+	}
+
+	userObject := database.Login(loginReq.Email, &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
-	match := userObject.MatchingPassword(password)
+	match := userObject.MatchingPassword(loginReq.Password)
 	if !match {
-		err.FailLoginWrongPassword(errors.New("fail login"))
+		err.FailLogin()
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}

@@ -1,6 +1,8 @@
 package models
 
 import (
+	"errors"
+	"net/mail"
 	"strconv"
 
 	"golang.org/x/crypto/bcrypt"
@@ -108,6 +110,34 @@ func (ru *ReadableUser) ToUserObject(userObject *User, err *CustomError) {
 	userObject.Weight = ru.Weight
 	userObject.GoalWeight = ru.GoalWeight
 	// userObject.Metadata = *metadata
+}
+
+func (ru *ReadableUser) Validate() error {
+	switch {
+	case ru.Name == "":
+		return errors.New("invalid name")
+	case ru.Email == "":
+		return errors.New("invalid email")
+	case ru.Password == "":
+		return errors.New("invalid password")
+	case ru.Gender == "":
+		return errors.New("invalid gender")
+	case ru.Height == 0:
+		return errors.New("invalid height")
+	case ru.Weight == 0:
+		return errors.New("invalid weight")
+	}
+
+	_, emailError := mail.ParseAddress(ru.Email)
+	if emailError != nil {
+		return errors.New("invalid email " + ru.Email)
+	}
+
+	if ru.Gender != "pria" && ru.Gender != "wanita" {
+		return errors.New("invalid gender. must containt pria or wanita")
+	}
+
+	return nil
 }
 
 func ToReadableUserList(userModelList []User, err *CustomError) []ReadableUser {
