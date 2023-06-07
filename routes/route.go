@@ -58,4 +58,6 @@ func InitRoute(e *echo.Echo) {
 	e.Use(middleware.CORS())
 	LoadJwtConfig()
 	AddUserRoutes(e)
+	AddPlanRoutes(e)
+	AddMembershipRoutes(e)
 }

@@ -5,6 +5,30 @@ import (
 	"strconv"
 )
 
+type GeneralParameter struct {
+	Name string
+	Page Pages
+}
+
+func (gp *GeneralParameter) NameQueryForm() {
+	gp.Name = "%%" + gp.Name + "%%"
+}
+
+type IDParameter struct {
+	IDString string
+	ID       int
+}
+
+func (i *IDParameter) ConvertIDStringToINT(err *CustomError) {
+	if i.IDString != "" {
+		i.ID, err.ErrorMessage = strconv.Atoi(i.IDString)
+		if err.ErrorMessage != nil {
+			err.StatusCode = 400
+			err.ErrorReason = "invalid id parameter :" + i.IDString
+		}
+	}
+}
+
 type Pages struct {
 	PageString string
 	Page       int
@@ -12,7 +36,7 @@ type Pages struct {
 	Limit      int
 }
 
-func (p *Pages) ConvertPageToINT(err *CustomError) {
+func (p *Pages) ConvertPageStringToINT(err *CustomError) {
 	if p.PageString != "" {
 		p.Page, err.ErrorMessage = strconv.Atoi(p.PageString)
 		if err.ErrorMessage != nil {
@@ -24,10 +48,9 @@ func (p *Pages) ConvertPageToINT(err *CustomError) {
 	}
 }
 
-func (p *Pages) CalcOffsetLimit() (int, int) {
-	var offset int
+func (p *Pages) CalcOffsetLimit() {
+	p.Limit = constants.LIMIT
 	if p.Page > 1 {
-		offset = p.Page * constants.LIMIT
+		p.Offset = p.Page * p.Limit
 	}
-	return offset, constants.LIMIT
 }
