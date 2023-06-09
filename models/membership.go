@@ -47,6 +47,7 @@ func (m *Membership) ToReadableMembership(readableMembership *ReadableMembership
 	readableMembership.Plan.Name = m.Plan.Name
 	readableMembership.Plan.Duration = m.Plan.Duration
 	readableMembership.Plan.Price = m.Plan.Price
+	readableMembership.Plan.Description = m.Plan.Description
 	readableMembership.Plan.ReadableMetadata = *readableMembershipMetadata
 	readableMembership.StartDate = m.StartDate.Format(constants.DATETIME_FORMAT)
 	readableMembership.EndDate = m.EndDate.Format(constants.DATETIME_FORMAT)

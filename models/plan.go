@@ -11,6 +11,7 @@ type Plan struct {
 	Name        string
 	Duration    int
 	Price       int
+	Description string
 	Memberships []Membership `gorm:"constraint:OnUpdate:CASCADE"`
 	Metadata    `gorm:"embedded"`
 }
@@ -21,6 +22,7 @@ type ReadablePlan struct {
 	Name             string `json:"name"`
 	Duration         int    `json:"duration"`
 	Price            int    `json:"price"`
+	Description      string `json:"description"`
 	ReadableMetadata `json:"metadata"`
 }
 
@@ -48,6 +50,7 @@ func (rp *ReadablePlan) ToReadablePlan(planObject *Plan) {
 	rp.Name = planObject.Name
 	rp.Duration = planObject.Duration
 	rp.Price = planObject.Price
+	rp.Description = planObject.Description
 	rp.ReadableMetadata.CreatedAt = planObject.Metadata.CreatedAt.Format(constants.DATETIME_FORMAT)
 	rp.ReadableMetadata.UpdatedAt = planObject.Metadata.UpdatedAt.Format(constants.DATETIME_FORMAT)
 }
@@ -62,6 +65,7 @@ func ToReadablePlanList(planModelList []Plan) []ReadablePlan {
 		readablePlan.Name = item.Name
 		readablePlan.Duration = item.Duration
 		readablePlan.Price = item.Price
+		readablePlan.Description = item.Description
 		// readablePlan.ReadableMetadata = *metadata
 		readablePlanList[i] = readablePlan
 	}
