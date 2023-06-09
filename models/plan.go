@@ -3,6 +3,7 @@ package models
 import (
 	"gofit-api/constants"
 	"strconv"
+	"strings"
 )
 
 // Plan struct for gorm
@@ -50,9 +51,17 @@ func (rp *ReadablePlan) ToReadablePlan(planObject *Plan) {
 	rp.Name = planObject.Name
 	rp.Duration = planObject.Duration
 	rp.Price = planObject.Price
-	rp.Description = planObject.Description
+	rp.Description = EscapeString(planObject.Description)
 	rp.ReadableMetadata.CreatedAt = planObject.Metadata.CreatedAt.Format(constants.DATETIME_FORMAT)
 	rp.ReadableMetadata.UpdatedAt = planObject.Metadata.UpdatedAt.Format(constants.DATETIME_FORMAT)
+}
+
+// EscapeString
+func EscapeString(input string) string {
+	escapedString := strings.ReplaceAll(input, "\n", "\\n")
+	escapedString = strings.ReplaceAll(escapedString, "\t", "\\t")
+
+	return escapedString
 }
 
 // ToReadablePlanList converts a list of Plan models to a list of ReadablePlan models
