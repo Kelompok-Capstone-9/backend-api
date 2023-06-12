@@ -2,18 +2,18 @@ package routes
 
 import (
 	"gofit-api/controllers"
+	m "gofit-api/middlewares"
 
+	echojwt "github.com/labstack/echo-jwt"
 	"github.com/labstack/echo/v4"
 )
 
 func AddLocationRoutes(e *echo.Echo) {
-
-	e.GET("/locations/all", controllers.GetLocationsController)
-	// e.GET("/classes/:id", controllers.GetInstuctorController)
-
-	// instructorJWT := e.Group("/instructors")
-	// instructorJWT.Use(echojwt.WithConfig(jwtConfig), m.IsAdmin)
-	// instructorJWT.POST("", controllers.CreateInstructorController)
-	// instructorJWT.PUT("/:id", controllers.EditInstructorController)
-	// instructorJWT.DELETE("/:id", controllers.DeleteInstructorController)
+	locationJWT := e.Group("/locations")
+	locationJWT.Use(echojwt.WithConfig(jwtConfig), m.IsAdmin)
+	locationJWT.GET("/all", controllers.GetLocationsController)
+	locationJWT.GET("/:id", controllers.GetLocationByIDController)
+	locationJWT.POST("", controllers.CreateLocationController)
+	locationJWT.PUT("/:id", controllers.EditLocationController)
+	locationJWT.DELETE("/:id", controllers.DeleteLocationController)
 }

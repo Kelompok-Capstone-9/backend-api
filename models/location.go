@@ -1,13 +1,15 @@
 package models
 
+import "errors"
+
 type Location struct {
 	ID        uint
 	Name      string
+	Address   string
 	Link      string
 	City      string
 	Latitude  string
 	Longitude string
-	ClassID   uint
 	Metadata  `gorm:"embedded"`
 }
 
@@ -16,7 +18,7 @@ func (l *Location) ToReadableLocation(readableLocation *ReadableLocation) {
 
 	readableLocation.ID = int(l.ID)
 	readableLocation.Name = l.Name
-	readableLocation.Link = l.Link
+	readableLocation.Address = l.Address
 	readableLocation.City = l.City
 	readableLocation.Latitude = l.Latitude
 	readableLocation.Longitude = l.Longitude
@@ -26,17 +28,26 @@ func (l *Location) ToReadableLocation(readableLocation *ReadableLocation) {
 type ReadableLocation struct {
 	ID               int    `json:"id"`
 	Name             string `json:"name"`
-	Link             string `json:"link"`
+	Address          string `json:"address"`
 	City             string `json:"city"`
 	Latitude         string `json:"latitude"`
 	Longitude        string `json:"longitude"`
 	ReadableMetadata `json:"metadata"`
 }
 
+func (rl *ReadableLocation) Validate() error {
+	switch {
+	case rl.Name == "":
+		return errors.New("invalid name")
+	}
+	return nil
+}
+
 func (rl *ReadableLocation) ToLocationObject(locationObject *Location) {
 	locationObject.ID = uint(rl.ID)
 	locationObject.Name = rl.Name
-	locationObject.Link = rl.Link
+	locationObject.Address = rl.Address
+	locationObject.City = rl.City
 	locationObject.Latitude = rl.Latitude
 	locationObject.Longitude = rl.Longitude
 }

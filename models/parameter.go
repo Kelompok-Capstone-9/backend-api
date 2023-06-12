@@ -14,6 +14,58 @@ func (gp *GeneralParameter) NameQueryForm() {
 	gp.Name = "%%" + gp.Name + "%%"
 }
 
+type ClassParameters struct{
+	ClassName string
+	LocationParameters
+	Date string
+	Time string
+	ClassType string
+}
+
+func (cp *ClassParameters) QueryString() string {
+	var queryString string
+	if cp.ClassName != "" {
+		cp.ClassName = "%" + cp.ClassName + "%"
+		switch queryString{
+		case "":
+			queryString += "name LIKE " + cp.ClassName
+		default:
+			queryString += "AND name LIKE " + cp.ClassName
+		}
+	}
+
+	if cp.ClassName != "" {
+		cp.ClassName = "%" + cp.ClassName + "%"
+		switch queryString{
+		case "":
+			queryString += "name LIKE " + cp.ClassName
+		default:
+			queryString += "AND name LIKE " + cp.ClassName
+		}
+	}
+	return queryString
+}
+
+type LocationParameters struct{
+	Name string
+	Address string
+	City string
+}
+
+func (lp *LocationParameters) QueryString() string {
+	var queryString string
+	if lp.Name != "" {
+		lp.Name = "%" + lp.Name + "%"
+		switch queryString{
+		case "":
+			queryString += "name LIKE " + lp.Name
+		default:
+			queryString += "AND name LIKE " + lp.Name
+		}
+	}
+	return queryString
+}
+
 type IDParameter struct {
 	IDString string
 	ID       int

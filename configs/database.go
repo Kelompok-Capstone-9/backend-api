@@ -1,6 +1,7 @@
 package configs
 
 import (
+	"errors"
 	"fmt"
 	"gofit-api/models"
 	"time"
@@ -30,50 +31,130 @@ func InitDB() error {
 func MigrateDB() error {
 	return DB.AutoMigrate(
 		models.User{},
+		models.ClassPackage{},
 		models.Class{},
 		models.Location{},
 	)
 }
 
-func SeedDB() error {
+func MigrateAndSeedDB() error {
+	// drop table if exists
+	err := DB.Migrator().DropTable(models.User{}, models.Location{}, models.Class{}, models.ClassPackage{})
+	if err != nil {
+		return errors.New("fail to drop table")
+	}
+
+	// migrate table
+	err = DB.AutoMigrate(models.User{}, models.Location{}, models.Class{}, models.ClassPackage{})
+	if err != nil {
+		return errors.New("fail to migrate")
+	}
+
 	var (
-		admin = models.User{
-			Name:     "GoFit Administrator",
-			Email:    "gofit@gofit.com",
-			Password: "gofitadmin123",
-			Gender:   "pria",
-			Height:   158,
-			Weight:   60,
-			IsAdmin:  true,
+		users = []models.User{
+			{
+				Name:     "GoFit Administrator",
+				Email:    "admin@gofit.com",
+				Password: "gofitadmin123",
+				Gender:   models.Pria,
+				Height:   158,
+				Weight:   60,
+				IsAdmin:  true,
+			},
+			{
+				Name:     "Edward Halley",
+				Email:    "halley@gmail.com",
+				Password: "halley123",
+				Gender:   models.Pria,
+				Height:   158,
+				Weight:   60,
+				IsAdmin:  false,
+			},
 		}
 
-		offlineJakarta = models.Location{
-			Name:      "Offline",
+		location = models.Location{
+			Name:      "GoFit Gym Depok",
+			Address:   "Jl. Margonda Raya No.151",
 			City:      "Depok",
 			Latitude:  "1572619562112",
 			Longitude: "1527129572712",
-			ClassID:   1,
 		}
 
-		offlineClass = models.Class{
-			Name:        "Cardio Class",
-			Description: "Kelas kebugaran untuk mengurangi lemak dalam tubuh",
-			ClassType:   models.Offline,
-			StartedAt:   time.Now(),
-			Location:    models.Location{ID: 1},
+		locationID uint = 1
+		classes         = []models.Class{
+			{
+				Name:        "Cardio Class",
+				Description: "Kelas kebugaran untuk mengurangi lemak dalam tubuh",
+				ClassType:   models.Offline,
+				StartedAt:   time.Now(),
+				LocationID:  &locationID,
+			},
+			{
+				Name:        "Yoga Class",
+				Description: "Kelas Online kebugaran untuk mengurangi lemak dalam tubuh",
+				ClassType:   models.Online,
+				Link:        "https://zoom.us/yoga-room",
+				StartedAt:   time.Now(),
+			},
+		}
+
+		classPackages = []models.ClassPackage{
+			{
+				Period:  models.Daily,
+				Price:   50000,
+				ClassID: 1,
+			},
+			{
+				Period:  models.Weekly,
+				Price:   200000,
+				ClassID: 1,
+			},
+			{
+				Period:  models.Monthly,
+				Price:   350000,
+				ClassID: 1,
+			},
+			{
+				Period:  models.Daily,
+				Price:   30000,
+				ClassID: 2,
+			},
+			{
+				Period:  models.Weekly,
+				Price:   150000,
+				ClassID: 2,
+			},
+			{
+				Period:  models.Monthly,
+				Price:   250000,
+				ClassID: 2,
+			},
 		}
 	)
-	admin.HashingPassword(&models.CustomError{})
-	err := DB.FirstOrCreate(&admin).Error
+
+	for key := range users {
+		users[key].HashingPassword(&models.CustomError{})
+	}
+
+	err = DB.Create(&users).Error
 	if err != nil {
 		return err
 	}
 
-	err = DB.FirstOrCreate(&offlineClass).Error
+	err = DB.Create(&location).Error
 	if err != nil {
 		return err
 	}
 
-	err = DB.FirstOrCreate(&offlineJakarta).Error
-	return err
+	err = DB.Create(&classes).Error
+	if err != nil {
+		return err
+	}
+
+	err = DB.Create(&classPackages).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -1,8 +1,11 @@
 package database
 
 import (
+	"errors"
 	"gofit-api/configs"
 	"gofit-api/models"
+
+	"gorm.io/gorm"
 )
 
 func GetClasses(offset, limit int, err *models.CustomError) ([]models.ReadableClass, int) {
@@ -29,38 +32,38 @@ func GetClasses(offset, limit int, err *models.CustomError) ([]models.ReadableCl
 // 	return models.ToReadableInstructorList(instructorObjectList, err), int(result.RowsAffected)
 // }
 
-// func GetInstructor(instructorObject *models.Instructor, err *models.CustomError) {
-// 	result := configs.DB.First(instructorObject)
-// 	if result.Error != nil {
-// 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-// 			err.NoRecordFound(result.Error)
-// 		} else {
-// 			err.FailRetrieveDataFromDB(result.Error)
-// 		}
-// 	}
-// }
+func GetClass(classObject *models.Class, err *models.CustomError) {
+	result := configs.DB.Preload("Location").First(classObject)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			err.NoRecordFound(result.Error)
+		} else {
+			err.FailRetrieveDataFromDB(result.Error)
+		}
+	}
+}
 
-// func CreateInstructor(instructorObject *models.Instructor, err *models.CustomError) {
-// 	result := configs.DB.Create(instructorObject)
-// 	if result.Error != nil {
-// 		if errors.As(result.Error, &mysqlErr) && mysqlErr.Number == 1062 {
-// 			err.DuplicateKey(result.Error)
-// 		} else {
-// 			err.FailCreateDataInDB(result.Error)
-// 		}
-// 	}
-// }
+func CreateClass(classObject *models.Class, err *models.CustomError) {
+	result := configs.DB.Create(classObject)
+	if result.Error != nil {
+		if errors.As(result.Error, &mysqlErr) && mysqlErr.Number == 1062 {
+			err.DuplicateKey(result.Error)
+		} else {
+			err.FailCreateDataInDB(result.Error)
+		}
+	}
+}
 
-// func UpdateInstructor(instructorObject *models.Instructor, err *models.CustomError) {
-// 	result := configs.DB.Save(instructorObject)
-// 	if result.Error != nil {
-// 		err.FailEditDataInDB(result.Error)
-// 	}
-// }
+func UpdateClass(classObject *models.Class, err *models.CustomError) {
+	result := configs.DB.Save(classObject)
+	if result.Error != nil {
+		err.FailEditDataInDB(result.Error)
+	}
+}
 
-// func DeleteInstructor(instructorObject *models.Instructor, err *models.CustomError) {
-// 	result := configs.DB.Delete(instructorObject)
-// 	if result.Error != nil {
-// 		err.FailDeleteDataInDB(result.Error)
-// 	}
-// }
+func DeleteClass(classObject *models.Class, err *models.CustomError) {
+	result := configs.DB.Delete(classObject)
+	if result.Error != nil {
+		err.FailDeleteDataInDB(result.Error)
+	}
+}

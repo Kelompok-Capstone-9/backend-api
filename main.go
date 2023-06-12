@@ -19,10 +19,10 @@ func main() {
 		panic(err)
 	}
 
-	err = configs.SeedDB()
-	if err != nil {
-		panic(err)
-	}
+	// err = configs.MigrateAndSeedDB()
+	// if err != nil {
+	// 	panic(err)
+	// }
 	e := echo.New()
 	routes.InitRoute(e)
 

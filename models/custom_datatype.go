@@ -12,9 +12,10 @@ const (
 )
 
 func GenerateGenderType(genderString string) (Gender, error) {
-	if genderString == string(Pria) {
+	switch genderString {
+	case string(Pria):
 		return Pria, nil
-	} else if genderString == string(Wanita) {
+	case string(Wanita):
 		return Wanita, nil
 	}
 	return "", errors.New("invalid gender")
@@ -28,10 +29,31 @@ const (
 )
 
 func GenerateClassType(classTypeString string) (ClassType, error) {
-	if classTypeString == string(Offline) {
+	switch classTypeString {
+	case string(Offline):
 		return Offline, nil
-	} else if classTypeString == string(Online) {
+	case string(Online):
 		return Online, nil
 	}
 	return "", errors.New("invalid class type")
+}
+
+type ClassPeriod string
+
+const (
+	Daily   ClassPeriod = "daily"
+	Weekly  ClassPeriod = "weekly"
+	Monthly ClassPeriod = "monthly"
+)
+
+func GenerateClassPeriod(classPeriodString string) (ClassPeriod, error) {
+	switch classPeriodString {
+	case string(Daily):
+		return Daily, nil
+	case string(Weekly):
+		return Weekly, nil
+	case string(Monthly):
+		return Monthly, nil
+	}
+	return "", errors.New("invalid class period")
 }

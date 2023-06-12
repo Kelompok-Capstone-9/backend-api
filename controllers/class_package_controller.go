@@ -9,10 +9,10 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func GetClassesController(c echo.Context) error {
+func GetClassPackgesController(c echo.Context) error {
 	var response models.GeneralListResponse
 	var params models.GeneralParameter
-	var classes []models.ReadableClass
+	var classPackages []models.ReadableClassPackage
 	var totalData int
 	var err models.CustomError
 
@@ -24,29 +24,18 @@ func GetClassesController(c echo.Context) error {
 	}
 	params.Page.CalcOffsetLimit()
 
-	params.Name = c.QueryParam("name")
-	switch {
-	case params.Name != "":
-		params.NameQueryForm() // change name paramater to query form e.g: andy to %andy%
-		// classes, totalData = database.GetClassesWithParam(&params, &err)
-		if err.IsError() {
-			response.ErrorOcurred(&err)
-			return c.JSON(response.StatusCode, response)
-		}
-	default:
-		classes, totalData = database.GetClasses(params.Page.Offset, params.Page.Limit, &err)
-		if err.IsError() {
-			response.ErrorOcurred(&err)
-			return c.JSON(response.StatusCode, response)
-		}
+	classPackages, totalData = database.GetClassPackages(params.Page.Offset, params.Page.Limit, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
 	}
 
-	response.Success("success get classes", params.Page.Page, totalData, classes)
+	response.Success("success get class packages", params.Page.Page, totalData, classPackages)
 	return c.JSON(response.StatusCode, response)
 }
 
 // get class by id
-func GetClassByIDController(c echo.Context) error {
+func GetClassPackageByIDController(c echo.Context) error {
 	var response models.GeneralResponse
 	var err models.CustomError
 	var idParam models.IDParameter
@@ -75,7 +64,7 @@ func GetClassByIDController(c echo.Context) error {
 }
 
 // create new class
-func CreateClassController(c echo.Context) error {
+func CreateClassPackageController(c echo.Context) error {
 	var response models.GeneralResponse
 	var err models.CustomError
 
@@ -128,7 +117,7 @@ func CreateClassController(c echo.Context) error {
 }
 
 // edit class by id
-func EditClassController(c echo.Context) error {
+func EditClassPackageController(c echo.Context) error {
 	var response models.GeneralResponse
 	var err models.CustomError
 	var idParam models.IDParameter
@@ -219,7 +208,7 @@ func EditClassController(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-func DeleteClassController(c echo.Context) error {
+func DeleteClassPackageController(c echo.Context) error {
 	var response models.GeneralResponse
 	var err models.CustomError
 	var idParam models.IDParameter

@@ -8,16 +8,16 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetLocations(offset, limit int, err *models.CustomError) ([]models.ReadableLocation, int) {
-	var locationObjectList []models.Location
+func GetClassPackages(offset, limit int, err *models.CustomError) ([]models.ReadableClassPackage, int) {
+	var classpackageObjectList []models.ClassPackage
 
-	result := configs.DB.Offset(offset).Limit(limit).Find(&locationObjectList)
+	result := configs.DB.Offset(offset).Limit(limit).Preload("Class.Location").Find(&classpackageObjectList)
 	if result.Error != nil {
 		err.FailRetrieveDataFromDB(result.Error)
 		return nil, 0
 	}
 
-	return models.ToReadableLocationList(locationObjectList, err), int(result.RowsAffected)
+	return models.ToReadableClassPackageList(classpackageObjectList, err), int(result.RowsAffected)
 }
 
 // func GetInstructorsWithParams(params *models.GeneralParameter, err *models.CustomError) ([]models.ReadableInstructor, int) {
@@ -32,19 +32,8 @@ func GetLocations(offset, limit int, err *models.CustomError) ([]models.Readable
 // 	return models.ToReadableInstructorList(instructorObjectList, err), int(result.RowsAffected)
 // }
 
-// func GetInstructor(instructorObject *models.Instructor, err *models.CustomError) {
-// 	result := configs.DB.First(instructorObject)
-// 	if result.Error != nil {
-// 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-// 			err.NoRecordFound(result.Error)
-// 		} else {
-// 			err.FailRetrieveDataFromDB(result.Error)
-// 		}
-// 	}
-// }
-
-func GetLocation(locationObject *models.Location, err *models.CustomError) {
-	result := configs.DB.First(locationObject)
+func GetClassPackage(classObject *models.Class, err *models.CustomError) {
+	result := configs.DB.Preload("Location").First(classObject)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			err.NoRecordFound(result.Error)
@@ -54,8 +43,8 @@ func GetLocation(locationObject *models.Location, err *models.CustomError) {
 	}
 }
 
-func CreateLocation(locationObject *models.Location, err *models.CustomError) {
-	result := configs.DB.Create(locationObject)
+func CreateClassPackage(classObject *models.Class, err *models.CustomError) {
+	result := configs.DB.Create(classObject)
 	if result.Error != nil {
 		if errors.As(result.Error, &mysqlErr) && mysqlErr.Number == 1062 {
 			err.DuplicateKey(result.Error)
@@ -65,15 +54,15 @@ func CreateLocation(locationObject *models.Location, err *models.CustomError) {
 	}
 }
 
-func UpdateLocation(locationObject *models.Location, err *models.CustomError) {
-	result := configs.DB.Save(locationObject)
+func UpdateClassPackage(classObject *models.Class, err *models.CustomError) {
+	result := configs.DB.Save(classObject)
 	if result.Error != nil {
 		err.FailEditDataInDB(result.Error)
 	}
 }
 
-func DeleteLocation(locationObject *models.Location, err *models.CustomError) {
-	result := configs.DB.Delete(locationObject)
+func DeleteClassPackage(classObject *models.Class, err *models.CustomError) {
+	result := configs.DB.Delete(classObject)
 	if result.Error != nil {
 		err.FailDeleteDataInDB(result.Error)
 	}
