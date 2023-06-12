@@ -113,6 +113,7 @@ func EditUserController(c echo.Context) error {
 	var readableModifiedUser models.ReadableUser
 	var readableUser models.ReadableUser
 	var userObject models.User
+	var passwordIsModified bool
 
 	userObject.InsertID(c.Param("id"), &err)
 	if err.IsError() {
@@ -150,11 +151,7 @@ func EditUserController(c echo.Context) error {
 			continue
 		case "Password":
 			if readableModifiedUser.Password != "" {
-				userObject.HashingPassword(&err)
-				if err.IsError() {
-					response.ErrorOcurred(&err)
-					return c.JSON(response.StatusCode, response)
-				}
+				passwordIsModified = true
 			} else {
 				continue
 			}
@@ -175,6 +172,14 @@ func EditUserController(c echo.Context) error {
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
+	}
+
+	if passwordIsModified {
+		userObject.HashingPassword(&err)
+		if err.IsError() {
+			response.ErrorOcurred(&err)
+			return c.JSON(response.StatusCode, response)
+		}
 	}
 
 	database.UpdateUser(&userObject, &err)
