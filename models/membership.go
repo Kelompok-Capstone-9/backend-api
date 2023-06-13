@@ -51,6 +51,7 @@ func (m *Membership) ToReadableMembership(readableMembership *ReadableMembership
 	readableMembership.Plan.ReadableMetadata = *readableMembershipMetadata
 	readableMembership.StartDate = m.StartDate.Format(constants.DATETIME_FORMAT)
 	readableMembership.EndDate = m.EndDate.Format(constants.DATETIME_FORMAT)
+	readableMembership.IsActive = m.IsActive()
 	readableMembership.ReadableMetadata = *readablePlanMetadata
 }
 
@@ -61,6 +62,7 @@ type ReadableMembership struct {
 	Plan             ReadablePlan `json:"plan"`
 	StartDate        string       `json:"start_date"`
 	EndDate          string       `json:"end_date"`
+	IsActive         bool         `json:"is_active"`
 	ReadableMetadata `json:"metadata"`
 }
 
@@ -71,6 +73,12 @@ func (rm *ReadableMembership) InsertID(itemIDString string, err *CustomError) {
 		err.StatusCode = 400
 		err.ErrorReason = "invalid id parameter: " + itemIDString
 	}
+}
+
+// IsActive checks if the membership is active based on current date
+func (m *Membership) IsActive() bool {
+	currentTime := time.Now()
+	return currentTime.After(m.StartDate) && currentTime.Before(m.EndDate)
 }
 
 func (rm *ReadableMembership) ToMembershipObject(membershipObject *Membership, err *CustomError) {
