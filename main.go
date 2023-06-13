@@ -23,8 +23,16 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
 	e := echo.New()
+
+	// e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+	// 	scheduler.ScheduleMembershipActivityCheck()
+	// 	return next
+	// })
+
 	routes.InitRoute(e)
 
 	e.Logger.Fatal(e.Start(":" + configs.AppConfig.AppPort))
+
 }

@@ -15,6 +15,7 @@ type Membership struct {
 	Plan      Plan      `gorm:"constraint:OnUpdate:CASCADE"`
 	StartDate time.Time `json:"start_date"`
 	EndDate   time.Time `json:"end_date"`
+	IsActive  bool
 	Metadata  `gorm:"embedded"`
 }
 
@@ -51,7 +52,7 @@ func (m *Membership) ToReadableMembership(readableMembership *ReadableMembership
 	readableMembership.Plan.ReadableMetadata = *readableMembershipMetadata
 	readableMembership.StartDate = m.StartDate.Format(constants.DATETIME_FORMAT)
 	readableMembership.EndDate = m.EndDate.Format(constants.DATETIME_FORMAT)
-	readableMembership.IsActive = m.IsActive()
+	readableMembership.IsActive = m.CheckMembershipActivity()
 	readableMembership.ReadableMetadata = *readablePlanMetadata
 }
 
@@ -76,9 +77,9 @@ func (rm *ReadableMembership) InsertID(itemIDString string, err *CustomError) {
 }
 
 // IsActive checks if the membership is active based on current date
-func (m *Membership) IsActive() bool {
+func (m *Membership) CheckMembershipActivity() bool {
 	currentTime := time.Now()
-	return currentTime.After(m.StartDate) && currentTime.Before(m.EndDate)
+	return m.StartDate.After(currentTime) && currentTime.Before(m.EndDate)
 }
 
 func (rm *ReadableMembership) ToMembershipObject(membershipObject *Membership, err *CustomError) {
