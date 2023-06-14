@@ -2,6 +2,7 @@ package main
 
 import (
 	"gofit-api/configs"
+	"gofit-api/lib/scheduler"
 	"gofit-api/routes"
 
 	"github.com/labstack/echo/v4"
@@ -26,10 +27,7 @@ func main() {
 
 	e := echo.New()
 
-	// e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-	// 	scheduler.ScheduleMembershipActivityCheck()
-	// 	return next
-	// })
+	go scheduler.ScheduleMembershipActivityCheck()
 
 	routes.InitRoute(e)
 
