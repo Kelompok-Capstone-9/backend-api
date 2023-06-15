@@ -31,21 +31,22 @@ func InitDB() error {
 func MigrateDB() error {
 	return DB.AutoMigrate(
 		models.User{},
-		models.ClassPackage{},
-		models.Class{},
 		models.Location{},
+		models.Class{},
+		models.ClassPackage{},
+		models.ClassTicket{},
 	)
 }
 
 func MigrateAndSeedDB() error {
 	// drop table if exists
-	err := DB.Migrator().DropTable(models.User{}, models.Location{}, models.Class{}, models.ClassPackage{})
+	err := DB.Migrator().DropTable(models.User{}, models.Location{}, models.Class{}, models.ClassPackage{}, models.ClassTicket{})
 	if err != nil {
 		return errors.New("fail to drop table")
 	}
 
 	// migrate table
-	err = DB.AutoMigrate(models.User{}, models.Location{}, models.Class{}, models.ClassPackage{})
+	err = DB.AutoMigrate(models.User{}, models.Location{}, models.Class{}, models.ClassPackage{}, models.ClassTicket{})
 	if err != nil {
 		return errors.New("fail to migrate")
 	}
@@ -66,6 +67,15 @@ func MigrateAndSeedDB() error {
 				Email:    "halley@gmail.com",
 				Password: "halley123",
 				Gender:   models.Pria,
+				Height:   158,
+				Weight:   60,
+				IsAdmin:  false,
+			},
+			{
+				Name:     "Katarina Snow",
+				Email:    "katarina@gmail.com",
+				Password: "katarina123",
+				Gender:   models.Wanita,
 				Height:   158,
 				Weight:   60,
 				IsAdmin:  false,
@@ -130,6 +140,24 @@ func MigrateAndSeedDB() error {
 				ClassID: 2,
 			},
 		}
+
+		classTickets = []models.ClassTicket{
+			{
+				UserID:         2,
+				ClassPackageID: 2,
+				Status:         models.Booked,
+			},
+			{
+				UserID:         3,
+				ClassPackageID: 5,
+				Status:         models.Pending,
+			},
+			{
+				UserID:         2,
+				ClassPackageID: 2,
+				Status:         models.Cancelled,
+			},
+		}
 	)
 
 	for key := range users {
@@ -152,6 +180,11 @@ func MigrateAndSeedDB() error {
 	}
 
 	err = DB.Create(&classPackages).Error
+	if err != nil {
+		return err
+	}
+
+	err = DB.Create(&classTickets).Error
 	if err != nil {
 		return err
 	}

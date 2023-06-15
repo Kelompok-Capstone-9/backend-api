@@ -57,3 +57,23 @@ func GenerateClassPeriod(classPeriodString string) (ClassPeriod, error) {
 	}
 	return "", errors.New("invalid class period")
 }
+
+type ClassTicketStatus string
+
+const (
+	Booked   ClassTicketStatus = "booked"
+	Pending  ClassTicketStatus = "pending"
+	Cancelled ClassTicketStatus = "cancelled"
+)
+
+func GenerateClassTicketStatus(classTicketStatusString string) (ClassTicketStatus, error) {
+	switch classTicketStatusString {
+	case string(Booked):
+		return Booked, nil
+	case string(Pending):
+		return Pending, nil
+	case string(Cancelled):
+		return Cancelled, nil
+	}
+	return "", errors.New("invalid class ticket status")
+}
