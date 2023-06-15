@@ -3,6 +3,7 @@ package models
 import (
 	"gofit-api/constants"
 	"strconv"
+	"strings"
 )
 
 // Plan struct for gorm
@@ -11,6 +12,7 @@ type Plan struct {
 	Name        string
 	Duration    int
 	Price       int
+	Description string
 	Memberships []Membership `gorm:"constraint:OnUpdate:CASCADE"`
 	Metadata    `gorm:"embedded"`
 }
@@ -21,6 +23,7 @@ type ReadablePlan struct {
 	Name             string `json:"name"`
 	Duration         int    `json:"duration"`
 	Price            int    `json:"price"`
+	Description      string `json:"description"`
 	ReadableMetadata `json:"metadata"`
 }
 
@@ -48,8 +51,17 @@ func (rp *ReadablePlan) ToReadablePlan(planObject *Plan) {
 	rp.Name = planObject.Name
 	rp.Duration = planObject.Duration
 	rp.Price = planObject.Price
+	rp.Description = EscapeString(planObject.Description)
 	rp.ReadableMetadata.CreatedAt = planObject.Metadata.CreatedAt.Format(constants.DATETIME_FORMAT)
 	rp.ReadableMetadata.UpdatedAt = planObject.Metadata.UpdatedAt.Format(constants.DATETIME_FORMAT)
+}
+
+// EscapeString
+func EscapeString(input string) string {
+	escapedString := strings.ReplaceAll(input, "\n", "\\n")
+	escapedString = strings.ReplaceAll(escapedString, "\t", "\\t")
+
+	return escapedString
 }
 
 // ToReadablePlanList converts a list of Plan models to a list of ReadablePlan models
@@ -62,6 +74,7 @@ func ToReadablePlanList(planModelList []Plan) []ReadablePlan {
 		readablePlan.Name = item.Name
 		readablePlan.Duration = item.Duration
 		readablePlan.Price = item.Price
+		readablePlan.Description = item.Description
 		// readablePlan.ReadableMetadata = *metadata
 		readablePlanList[i] = readablePlan
 	}

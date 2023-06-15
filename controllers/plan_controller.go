@@ -131,6 +131,10 @@ func UpdatePlanController(c echo.Context) error {
 		existingPlan.Price = updatedPlan.Price
 	}
 
+	if updatedPlan.Description != "" {
+		existingPlan.Description = updatedPlan.Description
+	}
+
 	database.UpdatePlan(&existingPlan, &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)

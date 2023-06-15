@@ -15,6 +15,7 @@ type Membership struct {
 	Plan      Plan      `gorm:"constraint:OnUpdate:CASCADE"`
 	StartDate time.Time `json:"start_date"`
 	EndDate   time.Time `json:"end_date"`
+	IsActive  bool
 	Metadata  `gorm:"embedded"`
 }
 
@@ -47,9 +48,11 @@ func (m *Membership) ToReadableMembership(readableMembership *ReadableMembership
 	readableMembership.Plan.Name = m.Plan.Name
 	readableMembership.Plan.Duration = m.Plan.Duration
 	readableMembership.Plan.Price = m.Plan.Price
+	readableMembership.Plan.Description = m.Plan.Description
 	readableMembership.Plan.ReadableMetadata = *readableMembershipMetadata
 	readableMembership.StartDate = m.StartDate.Format(constants.DATETIME_FORMAT)
 	readableMembership.EndDate = m.EndDate.Format(constants.DATETIME_FORMAT)
+	readableMembership.IsActive = m.CheckMembershipActivity()
 	readableMembership.ReadableMetadata = *readablePlanMetadata
 }
 
@@ -60,6 +63,7 @@ type ReadableMembership struct {
 	Plan             ReadablePlan `json:"plan"`
 	StartDate        string       `json:"start_date"`
 	EndDate          string       `json:"end_date"`
+	IsActive         bool         `json:"is_active"`
 	ReadableMetadata `json:"metadata"`
 }
 
@@ -70,6 +74,12 @@ func (rm *ReadableMembership) InsertID(itemIDString string, err *CustomError) {
 		err.StatusCode = 400
 		err.ErrorReason = "invalid id parameter: " + itemIDString
 	}
+}
+
+// IsActive checks if the membership is active based on current date
+func (m *Membership) CheckMembershipActivity() bool {
+	currentTime := time.Now()
+	return m.StartDate.After(currentTime) && currentTime.Before(m.EndDate)
 }
 
 func (rm *ReadableMembership) ToMembershipObject(membershipObject *Membership, err *CustomError) {
