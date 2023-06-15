@@ -32,7 +32,7 @@ func GetMembership(membershipObject *models.Membership, err *models.CustomError)
 }
 
 func GetMembershipByUserID(userID uint, membershipObject *models.Membership, err *models.CustomError) {
-	result := configs.DB.Where("user_id = ?", userID).Preload("User").Preload("Plan").First(membershipObject)
+	result := configs.DB.Where("user_id = ? AND is_active = true", userID).Preload("User").Preload("Plan").First(membershipObject)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			err.NoRecordFound(result.Error)

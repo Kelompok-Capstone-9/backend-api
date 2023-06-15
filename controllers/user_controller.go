@@ -263,8 +263,10 @@ func LoginUserController(c echo.Context) error {
 
 	database.GetMembershipByUserID(userObject.ID, &membershipObject, &err)
 	if err.IsError() {
-		response.ErrorOcurred(&err)
-		return c.JSON(response.StatusCode, response)
+		if err.StatusCode == 500 {
+			response.ErrorOcurred(&err)
+			return c.JSON(response.StatusCode, response)
+		}
 	}
 
 	var token string
