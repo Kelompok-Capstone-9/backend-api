@@ -19,9 +19,13 @@ type Class struct {
 	Metadata      `gorm:"embedded"`
 }
 
-func (c *Class) ToReadableClass(readableClass *ReadableClass) {
-	readableLocationMetadata := c.Location.ToReadableMetadata()
+func (c *Class) ToReadableClass(readableClass *ReadableClass, err *CustomError) {
 	readableClassMetadata := c.Metadata.ToReadableMetadata()
+	readableClassPackages := ToReadableClassPackageList(c.ClassPackages, err)
+	if err.IsError() {
+		err.StatusCode = 400
+		err.ErrorReason = "fail to parse class packages"
+	}
 
 	readableClass.ID = int(c.ID)
 	readableClass.Name = c.Name
@@ -29,16 +33,25 @@ func (c *Class) ToReadableClass(readableClass *ReadableClass) {
 	readableClass.ClassType = string(c.ClassType)
 	readableClass.Link = c.Link
 	readableClass.StartedAt = c.StartedAt.Format(constants.DATETIME_FORMAT)
-	readableClass.Location.ID = int(c.Location.ID)
-	readableClass.Location.Name = c.Location.Name
-	readableClass.Location.City = c.Location.City
-	readableClass.Location.Latitude = c.Location.Latitude
-	readableClass.Location.Longitude = c.Location.Longitude
-	readableClass.Location.ReadableMetadata = *readableLocationMetadata
+	readableClass.ClassPackages = readableClassPackages
+	c.Location.ToReadableLocation(&readableClass.Location)
 	readableClass.ReadableMetadata = *readableClassMetadata
 }
 
-type ReadableClass struct {
+func (c *Class) ToReadableClassOnly(readableClass *ReadableClassOnly) {
+	readableClassMetadata := c.Metadata.ToReadableMetadata()
+	c.Location.ToReadableLocation(&readableClass.Location)
+
+	readableClass.ID = int(c.ID)
+	readableClass.Name = c.Name
+	readableClass.Description = c.Description
+	readableClass.ClassType = string(c.ClassType)
+	readableClass.Link = c.Link
+	readableClass.StartedAt = c.StartedAt.Format(constants.DATETIME_FORMAT)
+	readableClass.ReadableMetadata = *readableClassMetadata
+}
+
+type ReadableClassOnly struct {
 	ID               int              `json:"id"`
 	Name             string           `json:"name"`
 	Description      string           `json:"description"`
@@ -46,6 +59,18 @@ type ReadableClass struct {
 	Link             string           `json:"link"`
 	StartedAt        string           `json:"started_at"`
 	Location         ReadableLocation `json:"location"`
+	ReadableMetadata `json:"metadata"`
+}
+
+type ReadableClass struct {
+	ID               int                    `json:"id"`
+	Name             string                 `json:"name"`
+	Description      string                 `json:"description"`
+	ClassType        string                 `json:"class_type"`
+	Link             string                 `json:"link"`
+	StartedAt        string                 `json:"started_at"`
+	ClassPackages    []ReadableClassPackage `json:"class_packages"`
+	Location         ReadableLocation       `json:"location"`
 	ReadableMetadata `json:"metadata"`
 }
 
@@ -88,6 +113,12 @@ func (rc *ReadableClass) EditValidate() error {
 	return nil
 }
 
+func (rc *ReadableClass) HideLink() {
+	if rc.ClassType == "online" {
+		rc.Link = "https://****.com/******"
+	}
+}
+
 func (rc *ReadableClass) ToClassObject(classObject *Class, err *CustomError) {
 	var classType ClassType
 	classType, err.ErrorMessage = GenerateClassType(rc.ClassType)
@@ -117,13 +148,30 @@ func ToReadableClassList(classObjectList []Class, err *CustomError) []ReadableCl
 
 	for i, item := range classObjectList {
 		var readableClass ReadableClass
-		item.ToReadableClass(&readableClass)
+		item.ToReadableClass(&readableClass, err)
 		if err.IsError() {
 			err.StatusCode = 500
 			err.ErrorReason = "fail to parse location"
 			return nil
 		}
 		readableClassList[i] = readableClass
+	}
+
+	return readableClassList
+}
+
+func ToReadableClassOnlyList(classObjectList []Class, err *CustomError) []ReadableClassOnly {
+	readableClassList := make([]ReadableClassOnly, len(classObjectList))
+
+	for i, item := range classObjectList {
+		var readableClassOnly ReadableClassOnly
+		item.ToReadableClassOnly(&readableClassOnly)
+		if err.IsError() {
+			err.StatusCode = 500
+			err.ErrorReason = "fail to parse location"
+			return nil
+		}
+		readableClassList[i] = readableClassOnly
 	}
 
 	return readableClassList

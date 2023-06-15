@@ -11,7 +11,7 @@ import (
 func GetClasses(offset, limit int, err *models.CustomError) ([]models.ReadableClass, int) {
 	var classObjectList []models.Class
 
-	result := configs.DB.Offset(offset).Limit(limit).Preload("Location").Find(&classObjectList)
+	result := configs.DB.Offset(offset).Limit(limit).Preload("ClassPackages").Preload("Location").Find(&classObjectList)
 	if result.Error != nil {
 		err.FailRetrieveDataFromDB(result.Error)
 		return nil, 0
@@ -33,7 +33,7 @@ func GetClasses(offset, limit int, err *models.CustomError) ([]models.ReadableCl
 // }
 
 func GetClass(classObject *models.Class, err *models.CustomError) {
-	result := configs.DB.Preload("Location").First(classObject)
+	result := configs.DB.Preload("ClassPackages").Preload("Location").First(classObject)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			err.NoRecordFound(result.Error)

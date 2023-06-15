@@ -68,9 +68,13 @@ func GetClassByIDController(c echo.Context) error {
 		return c.JSON(response.StatusCode, response)
 	}
 
-	classObject.ToReadableClass(&readableClass)
+	classObject.ToReadableClass(&readableClass, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
 
-	response.Success(http.StatusOK, "success get instructor", readableClass)
+	response.Success(http.StatusOK, "success get class", readableClass)
 	return c.JSON(response.StatusCode, response)
 }
 
@@ -121,7 +125,11 @@ func CreateClassController(c echo.Context) error {
 		return c.JSON(response.StatusCode, response)
 	}
 
-	classObject.ToReadableClass(&readableClass)
+	classObject.ToReadableClass(&readableClass, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
 
 	response.Success(http.StatusCreated, "success create new class", readableClass)
 	return c.JSON(response.StatusCode, response)
@@ -165,7 +173,11 @@ func EditClassController(c echo.Context) error {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
-	classObject.ToReadableClass(&readableClass)
+	classObject.ToReadableClass(&readableClass, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
 
 	//replace exist data with new one
 	var classPointer *models.ReadableClass = &readableClass
