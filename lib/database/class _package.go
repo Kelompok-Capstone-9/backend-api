@@ -2,6 +2,7 @@ package database
 
 import (
 	"errors"
+	"fmt"
 	"gofit-api/configs"
 	"gofit-api/models"
 
@@ -20,20 +21,34 @@ func GetClassPackages(offset, limit int, err *models.CustomError) ([]models.Read
 	return models.ToReadableClassPackageList(classpackageObjectList, err), int(result.RowsAffected)
 }
 
-// func GetInstructorsWithParams(params *models.GeneralParameter, err *models.CustomError) ([]models.ReadableInstructor, int) {
-// 	var instructorObjectList []models.Instructor
+func GetClassPackagesOnly(offset, limit int, err *models.CustomError) ([]models.ReadableClassPackageOnly, int) {
+	var classpackageObjectList []models.ClassPackage
 
-// 	result := configs.DB.Where("name LIKE ?", params.Name).Offset(params.Page.Offset).Limit(params.Page.Limit).Find(&instructorObjectList)
-// 	if result.Error != nil {
-// 		err.FailRetrieveDataFromDB(result.Error)
-// 		return nil, 0
-// 	}
+	result := configs.DB.Offset(offset).Limit(limit).Find(&classpackageObjectList)
+	if result.Error != nil {
+		err.FailRetrieveDataFromDB(result.Error)
+		return nil, 0
+	}
 
-// 	return models.ToReadableInstructorList(instructorObjectList, err), int(result.RowsAffected)
-// }
+	return models.ToReadableClassPackageOnlyList(classpackageObjectList, err), int(result.RowsAffected)
+}
 
-func GetClassPackage(classObject *models.Class, err *models.CustomError) {
-	result := configs.DB.Preload("Location").First(classObject)
+func GetClassPackagesWithParams(query string,page *models.Pages, err *models.CustomError) ([]models.ReadableClassPackage, int) {
+	var classPackageObjectList []models.ClassPackage
+	
+	fmt.Println(query)
+
+	result := configs.DB.Where(query).Offset(page.Offset).Limit(page.Limit).Find(&classPackageObjectList)
+	if result.Error != nil {
+		err.FailRetrieveDataFromDB(result.Error)
+		return nil, 0
+	}
+
+	return models.ToReadableClassPackageList(classPackageObjectList, err), int(result.RowsAffected)
+}
+
+func GetClassPackage(classPackageObject *models.ClassPackage, err *models.CustomError) {
+	result := configs.DB.Preload("Class.Location").First(classPackageObject)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			err.NoRecordFound(result.Error)
@@ -43,8 +58,8 @@ func GetClassPackage(classObject *models.Class, err *models.CustomError) {
 	}
 }
 
-func CreateClassPackage(classObject *models.Class, err *models.CustomError) {
-	result := configs.DB.Create(classObject)
+func CreateClassPackage(classPackageObject *models.ClassPackage, err *models.CustomError) {
+	result := configs.DB.Create(classPackageObject)
 	if result.Error != nil {
 		if errors.As(result.Error, &mysqlErr) && mysqlErr.Number == 1062 {
 			err.DuplicateKey(result.Error)
@@ -54,15 +69,15 @@ func CreateClassPackage(classObject *models.Class, err *models.CustomError) {
 	}
 }
 
-func UpdateClassPackage(classObject *models.Class, err *models.CustomError) {
-	result := configs.DB.Save(classObject)
+func UpdateClassPackage(classPackageObject *models.ClassPackage, err *models.CustomError) {
+	result := configs.DB.Save(classPackageObject)
 	if result.Error != nil {
 		err.FailEditDataInDB(result.Error)
 	}
 }
 
-func DeleteClassPackage(classObject *models.Class, err *models.CustomError) {
-	result := configs.DB.Delete(classObject)
+func DeleteClassPackage(classPackageObject *models.ClassPackage, err *models.CustomError) {
+	result := configs.DB.Delete(classPackageObject)
 	if result.Error != nil {
 		err.FailDeleteDataInDB(result.Error)
 	}

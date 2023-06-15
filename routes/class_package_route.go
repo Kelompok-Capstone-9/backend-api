@@ -10,13 +10,12 @@ import (
 
 func AddClassPackageRoutes(e *echo.Echo) {
 
-	e.GET("/classes/packages/all", controllers.GetClassPackgesController)
-	// e.GET("/classes/:id", controllers.GetClassByIDController)
-
 	// for administrator
-	classJWT := e.Group("/classes/package")
-	classJWT.Use(echojwt.WithConfig(jwtConfig), m.IsAdmin)
-	classJWT.POST("", controllers.CreateClassController)
-	classJWT.PUT("/:id", controllers.EditClassController)
-	classJWT.DELETE("/:id", controllers.DeleteClassController)
+	classPackageJWT := e.Group("/classes/packages")
+	classPackageJWT.Use(echojwt.WithConfig(jwtConfig), m.IsAdmin)
+	classPackageJWT.GET("/all", controllers.GetClassPackagesController) // with params
+	classPackageJWT.GET("/:id", controllers.GetClassPackageByIDController)
+	classPackageJWT.POST("", controllers.CreateClassPackageController)
+	classPackageJWT.PUT("/:id", controllers.EditClassPackageController)
+	classPackageJWT.DELETE("/:id", controllers.DeleteClassPackageController)
 }
