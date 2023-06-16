@@ -249,6 +249,55 @@ func DeleteClassTicketController(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
+// create new class ticket for users
+func CreateMyTicketController(c echo.Context) error {
+	var response models.GeneralResponse
+	var err models.CustomError
+
+	var readableClassTicket models.ReadableClassTicket
+	var classTicketObject models.ClassTicket
+	// var userObject models.User
+	// var classPackageObject models.ClassPackage
+
+	var classPackageIDParam models.IDParameter
+	classPackageIDParam.IDString = c.Param("class_package_id")
+	classPackageIDParam.ConvertIDStringToINT(&err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		response.ErrorReason = "invalid class package id"
+		return c.JSON(response.StatusCode, response)
+	}
+	classTicketObject.ClassPackage.ID = uint(classPackageIDParam.ID)
+	database.GetClassPackage(&classTicketObject.ClassPackage, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		response.ErrorReason = "invalid class package"
+		return c.JSON(response.StatusCode, response)
+	}
+
+	userID := uint(middlewares.ExtractTokenUserID(c))
+	classTicketObject.User.ID = userID
+	database.GetUser(&classTicketObject.User, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		response.ErrorReason = "invalid user"
+		return c.JSON(response.StatusCode, response)
+	}
+
+	database.CreateClassTicket(&classTicketObject, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	classTicketObject.ToReadableClassTicket(&readableClassTicket)
+	readableClassTicket.User.HidePassword()
+	readableClassTicket.ClassPackage.Class.HideLink()
+
+	response.Success(http.StatusCreated, "success create my class ticket. proceed to transaction to book", readableClassTicket)
+	return c.JSON(response.StatusCode, response)
+}
+
 func GetMyTicketsController(c echo.Context) error {
 	var response models.GeneralListResponse
 	var page models.Pages
@@ -273,7 +322,7 @@ func GetMyTicketsController(c echo.Context) error {
 		return c.JSON(response.StatusCode, response)
 	}
 
-	response.Success("success get my class ticket", page.Page, totalData, classTickets)
+	response.Success("success get my class tickets", page.Page, totalData, classTickets)
 	return c.JSON(response.StatusCode, response)
 }
 
@@ -366,6 +415,6 @@ func CancelMyTicketController(c echo.Context) error {
 
 	readableClassTicket.User.HidePassword()
 
-	response.Success(http.StatusOK, "success get my class ticket detail", readableClassTicket)
+	response.Success(http.StatusOK, "success cancel my class ticket", readableClassTicket)
 	return c.JSON(response.StatusCode, response)
 }

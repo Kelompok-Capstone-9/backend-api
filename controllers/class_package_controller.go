@@ -245,6 +245,6 @@ func DeleteClassPackageController(c echo.Context) error {
 	deletedClass := map[string]int{
 		"class_package_id": int(classPackageObject.ID),
 	}
-	response.Success(http.StatusOK, "success delete class", deletedClass)
+	response.Success(http.StatusOK, "success delete class package", deletedClass)
 	return c.JSON(http.StatusOK, response)
 }
