@@ -9,10 +9,10 @@ import (
 )
 
 func AddClassTicketRoutes(e *echo.Echo) {
+	// for users
 	classTicketJWT := e.Group("/classes/tickets")
 	classTicketJWT.Use(echojwt.WithConfig(jwtConfig))
-
-	// for users
+	classTicketJWT.POST("/:class_package_id", controllers.CreateMyTicketController)   // create ticket/booking class
 	classTicketJWT.GET("/mytickets", controllers.GetMyTicketsController)              // my tickets (get tickets by user id)
 	classTicketJWT.GET("/mytickets/:id", controllers.GetMyTicketDetailController)     // get my ticket details
 	classTicketJWT.GET("/mytickets/cancel/:id", controllers.CancelMyTicketController) // cancel my ticket/booking

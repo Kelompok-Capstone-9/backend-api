@@ -75,7 +75,7 @@ type ReadableClass struct {
 	ClassType        string                 `json:"class_type"`
 	Link             string                 `json:"link"`
 	StartedAt        string                 `json:"started_at"`
-	ClassPackages    []ReadableClassPackageOnly `json:"class_packages"`
+	ClassPackages    []ReadableClassPackage `json:"class_packages"`
 	Location         ReadableLocation       `json:"location"`
 	ReadableMetadata `json:"metadata"`
 }
@@ -105,7 +105,7 @@ func (rc *ReadableClass) Validate() error {
 }
 
 func (rc *ReadableClass) EditValidate() error {
-	allFieldBlank := rc.Name == "" && rc.ClassType == "" && rc.StartedAt == "" && rc.Location.ID == 0
+	allFieldBlank := rc.Name == "" && rc.Description == "" && rc.ClassType == "" && rc.StartedAt == "" && rc.Location.ID == 0
 	if allFieldBlank {
 		return errors.New("all field is blank. nothing to change")
 	}

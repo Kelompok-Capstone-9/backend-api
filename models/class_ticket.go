@@ -8,7 +8,7 @@ type ClassTicket struct {
 	User           User
 	ClassPackageID uint
 	ClassPackage   ClassPackage
-	Status         ClassTicketStatus `gorm:"type:enum('booked','pending','cancelled')"`
+	Status         ClassTicketStatus `gorm:"type:enum('booked','pending','cancelled');default:'pending'"`
 	Metadata       `gorm:"embedded"`
 }
 

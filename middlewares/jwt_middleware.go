@@ -91,37 +91,15 @@ func ExtractTokenInfo(e echo.Context) (models.TokenInfo, error) {
 	return tokenInfo, errors.New("no token found")
 }
 
-func ExtractTokenUserID(e echo.Context) float64 {
-	user := e.Get("user").(*jwt.Token)
-	if user.Valid {
-		claims := user.Claims.(jwt.MapClaims)
-		userId := claims["userID"].(float64)
-		return userId
-	}
-	return 0
-}
-
-func IsMembership(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		user := c.Get("user").(*jwt.Token)
-		claims := user.Claims.(jwt.MapClaims)
-		isAdmin := claims["isAdmin"].(bool)
-		isMembership := claims["isMembership"].(bool)
-
-		if isAdmin {
-			return next(c)
-		}
-
-		if !isMembership {
-			var response models.GeneralResponse
-			response.StatusCode = http.StatusForbidden
-			response.Message = "Forbidden"
-			response.ErrorReason = "Membership are required to access this endpoint"
-			return c.JSON(response.StatusCode, response)
-		}
-		return next(c)
-	}
-}
+// func ExtractTokenUserID(e echo.Context) float64 {
+// 	user := e.Get("user").(*jwt.Token)
+// 	if user.Valid {
+// 		claims := user.Claims.(jwt.MapClaims)
+// 		userId := claims["userID"].(float64)
+// 		return userId
+// 	}
+// 	return 0
+// }
 
 func ExtractTokenIsAdmin(e echo.Context) bool {
 	tokenIsExist := e.Get("user") != nil
