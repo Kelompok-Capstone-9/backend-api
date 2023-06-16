@@ -1,7 +1,10 @@
 package controllers
 
 import (
+	"errors"
+	"fmt"
 	"gofit-api/lib/database"
+	"gofit-api/middlewares"
 	"gofit-api/models"
 	"net/http"
 
@@ -244,4 +247,125 @@ func DeleteClassTicketController(c echo.Context) error {
 	}
 	response.Success(http.StatusOK, "success delete class ticket", deletedClass)
 	return c.JSON(http.StatusOK, response)
+}
+
+func GetMyTicketsController(c echo.Context) error {
+	var response models.GeneralListResponse
+	var page models.Pages
+	var classTickets []models.ReadableClassTicket
+	var totalData int
+	var err models.CustomError
+
+	page.PageString = c.QueryParam("page")
+	page.ConvertPageStringToINT(&err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+	page.CalcOffsetLimit()
+
+	userID := int(middlewares.ExtractTokenUserID(c))
+	query := fmt.Sprintf("user_id = %d", userID)
+
+	classTickets, totalData = database.GetClassTicketsWithParams(query, &page, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	response.Success("success get my class ticket", page.Page, totalData, classTickets)
+	return c.JSON(response.StatusCode, response)
+}
+
+func GetMyTicketDetailController(c echo.Context) error {
+	var response models.GeneralResponse
+	var err models.CustomError
+	var idParam models.IDParameter
+
+	var readableClassTicket models.ReadableClassTicket
+	var classTicketObject models.ClassTicket
+
+	idParam.IDString = c.Param("id")
+	idParam.ConvertIDStringToINT(&err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+	classTicketObject.ID = uint(idParam.ID)
+
+	database.GetClassTicket(&classTicketObject, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	classTicketObject.ToReadableClassTicket(&readableClassTicket)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	// check if the ticket belongs to the same user retrieve this data
+	userID := middlewares.ExtractTokenUserID(c)
+	isMyTicket := readableClassTicket.User.ID == int(userID)
+	if !isMyTicket {
+		err.NewError(http.StatusUnauthorized, errors.New("unauthorized"), "this ticket doesnt belong to you")
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	readableClassTicket.User.HidePassword()
+
+	response.Success(http.StatusOK, "success get my class ticket detail", readableClassTicket)
+	return c.JSON(response.StatusCode, response)
+}
+
+func CancelMyTicketController(c echo.Context) error {
+	var response models.GeneralResponse
+	var err models.CustomError
+	var idParam models.IDParameter
+
+	var readableClassTicket models.ReadableClassTicket
+	var classTicketObject models.ClassTicket
+
+	idParam.IDString = c.Param("id")
+	idParam.ConvertIDStringToINT(&err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+	classTicketObject.ID = uint(idParam.ID)
+
+	database.GetClassTicket(&classTicketObject, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	classTicketObject.Status = models.Cancelled
+	database.UpdateClassTicket(&classTicketObject, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	classTicketObject.ToReadableClassTicket(&readableClassTicket)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	// check if the ticket belongs to the same user retrieve this data
+	userID := middlewares.ExtractTokenUserID(c)
+	isMyTicket := readableClassTicket.User.ID == int(userID)
+	if !isMyTicket {
+		err.NewError(http.StatusUnauthorized, errors.New("unauthorized"), "this ticket doesnt belong to you")
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	readableClassTicket.User.HidePassword()
+
+	response.Success(http.StatusOK, "success get my class ticket detail", readableClassTicket)
+	return c.JSON(response.StatusCode, response)
 }

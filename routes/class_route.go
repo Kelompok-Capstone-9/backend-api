@@ -9,12 +9,15 @@ import (
 )
 
 func AddClassRoutes(e *echo.Echo) {
-
-	e.GET("/classes/all", controllers.GetClassesController)
+	// for users
+	e.GET("/classes", controllers.GetClassesController)
 	e.GET("/classes/:id", controllers.GetClassByIDController)
 
-	classJWT := e.Group("/classes")
+	// for administrators
+	classJWT := e.Group("/admin/classes")
 	classJWT.Use(echojwt.WithConfig(jwtConfig), m.IsAdmin)
+	classJWT.GET("", controllers.GetClassesController)
+	classJWT.GET("/:id", controllers.GetClassByIDController)
 	classJWT.POST("", controllers.CreateClassController)
 	classJWT.PUT("/:id", controllers.EditClassController)
 	classJWT.DELETE("/:id", controllers.DeleteClassController)

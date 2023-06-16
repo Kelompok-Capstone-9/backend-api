@@ -90,22 +90,25 @@ func ExtractTokenInfo(e echo.Context) (models.TokenInfo, error) {
 	return tokenInfo, errors.New("no token found")
 }
 
-// func ExtractTokenUserID(e echo.Context) float64 {
-// 	user := e.Get("user").(*jwt.Token)
-// 	if user.Valid {
-// 		claims := user.Claims.(jwt.MapClaims)
-// 		userId := claims["userID"].(float64)
-// 		return userId
-// 	}
-// 	return 0
-// }
+func ExtractTokenUserID(e echo.Context) float64 {
+	user := e.Get("user").(*jwt.Token)
+	if user.Valid {
+		claims := user.Claims.(jwt.MapClaims)
+		userId := claims["userID"].(float64)
+		return userId
+	}
+	return 0
+}
 
-// func ExtractTokenIsAdmin(e echo.Context) bool {
-// 	user := e.Get("user").(*jwt.Token)
-// 	if user.Valid {
-// 		claims := user.Claims.(jwt.MapClaims)
-// 		isAdmin := claims["isAdmin"].(bool)
-// 		return isAdmin
-// 	}
-// 	return false
-// }
+func ExtractTokenIsAdmin(e echo.Context) bool {
+	tokenIsExist := e.Get("user") != nil
+	if tokenIsExist {
+		user := e.Get("user").(*jwt.Token)
+		if user.Valid {
+			claims := user.Claims.(jwt.MapClaims)
+			isAdmin := claims["isAdmin"].(bool)
+			return isAdmin
+		}
+	}
+	return false
+}

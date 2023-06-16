@@ -20,17 +20,17 @@ func GetClassTickets(offset, limit int, err *models.CustomError) ([]models.Reada
 	return models.ToReadableClassTicketList(classTicketObjectList, err), int(result.RowsAffected)
 }
 
-// func GetInstructorsWithParams(params *models.GeneralParameter, err *models.CustomError) ([]models.ReadableInstructor, int) {
-// 	var instructorObjectList []models.Instructor
+func GetClassTicketsWithParams(query string, page *models.Pages, err *models.CustomError) ([]models.ReadableClassTicket, int) {
+	var classTicketObjectList []models.ClassTicket
 
-// 	result := configs.DB.Where("name LIKE ?", params.Name).Offset(params.Page.Offset).Limit(params.Page.Limit).Find(&instructorObjectList)
-// 	if result.Error != nil {
-// 		err.FailRetrieveDataFromDB(result.Error)
-// 		return nil, 0
-// 	}
+	result := configs.DB.Where(query).Offset(page.Offset).Limit(page.Limit).Preload("User").Preload("ClassPackage.Class.Location").Find(&classTicketObjectList)
+	if result.Error != nil {
+		err.FailRetrieveDataFromDB(result.Error)
+		return nil, 0
+	}
 
-// 	return models.ToReadableInstructorList(instructorObjectList, err), int(result.RowsAffected)
-// }
+	return models.ToReadableClassTicketList(classTicketObjectList, err), int(result.RowsAffected)
+}
 
 func GetClassTicket(classTicketObject *models.ClassTicket, err *models.CustomError) {
 	result := configs.DB.Preload("User").Preload("ClassPackage.Class.Location").First(classTicketObject)

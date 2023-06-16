@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"gofit-api/lib/database"
+	"gofit-api/middlewares"
 	"gofit-api/models"
 	"net/http"
 	"reflect"
@@ -41,6 +42,13 @@ func GetClassesController(c echo.Context) error {
 		}
 	}
 
+	isAdmin := middlewares.ExtractTokenIsAdmin(c)
+	if !isAdmin {
+		for key := range classes {
+			classes[key].HideLink()
+		}
+	}
+
 	response.Success("success get classes", params.Page.Page, totalData, classes)
 	return c.JSON(response.StatusCode, response)
 }
@@ -72,6 +80,11 @@ func GetClassByIDController(c echo.Context) error {
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
+	}
+
+	isAdmin := middlewares.ExtractTokenIsAdmin(c)
+	if !isAdmin {
+		readableClass.HideLink()
 	}
 
 	response.Success(http.StatusOK, "success get class", readableClass)

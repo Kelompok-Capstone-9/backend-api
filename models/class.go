@@ -21,7 +21,7 @@ type Class struct {
 
 func (c *Class) ToReadableClass(readableClass *ReadableClass, err *CustomError) {
 	readableClassMetadata := c.Metadata.ToReadableMetadata()
-	readableClassPackages := ToReadableClassPackageList(c.ClassPackages, err)
+	readableClassPackages := ToReadableClassPackageOnlyList(c.ClassPackages, err)
 	if err.IsError() {
 		err.StatusCode = 400
 		err.ErrorReason = "fail to parse class packages"
@@ -62,6 +62,12 @@ type ReadableClassOnly struct {
 	ReadableMetadata `json:"metadata"`
 }
 
+func (rco *ReadableClassOnly) HideLink() {
+	if rco.ClassType == "online" {
+		rco.Link = "https://****.com/******"
+	}
+}
+
 type ReadableClass struct {
 	ID               int                    `json:"id"`
 	Name             string                 `json:"name"`
@@ -69,7 +75,7 @@ type ReadableClass struct {
 	ClassType        string                 `json:"class_type"`
 	Link             string                 `json:"link"`
 	StartedAt        string                 `json:"started_at"`
-	ClassPackages    []ReadableClassPackage `json:"class_packages"`
+	ClassPackages    []ReadableClassPackageOnly `json:"class_packages"`
 	Location         ReadableLocation       `json:"location"`
 	ReadableMetadata `json:"metadata"`
 }

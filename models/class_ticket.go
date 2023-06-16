@@ -92,6 +92,9 @@ func ToReadableClassTicketList(classTicketObjectList []ClassTicket, err *CustomE
 		}
 		readableClassTicketList[i] = readableClassTicket
 		readableClassTicketList[i].User.HidePassword()
+		if readableClassTicketList[i].Status != string(Booked) {
+			readableClassTicketList[i].ClassPackage.Class.HideLink()
+		}
 	}
 
 	return readableClassTicketList

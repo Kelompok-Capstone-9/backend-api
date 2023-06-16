@@ -9,16 +9,20 @@ import (
 )
 
 func AddClassTicketRoutes(e *echo.Echo) {
+	classTicketJWT := e.Group("/classes/tickets")
+	classTicketJWT.Use(echojwt.WithConfig(jwtConfig))
 
-	// my tickets (get tickets by user id)
-
-	e.GET("/classes/tickets/:id", controllers.GetClassTicketByIDController)
+	// for users
+	classTicketJWT.GET("/mytickets", controllers.GetMyTicketsController)              // my tickets (get tickets by user id)
+	classTicketJWT.GET("/mytickets/:id", controllers.GetMyTicketDetailController)     // get my ticket details
+	classTicketJWT.GET("/mytickets/cancel/:id", controllers.CancelMyTicketController) // cancel my ticket/booking
 
 	// for administrator
-	classTicketJWT := e.Group("/classes/tickets")
-	classTicketJWT.Use(echojwt.WithConfig(jwtConfig), m.IsAdmin)
-	classTicketJWT.GET("/all", controllers.GetClassTicketsController) // with params
-	classTicketJWT.POST("", controllers.CreateClassTicketController)
-	classTicketJWT.PUT("/:id", controllers.EditClassTicketController)
-	classTicketJWT.DELETE("/:id", controllers.DeleteClassTicketController)
+	ticketAdminJWT := e.Group("/admin/classes/tickets")
+	ticketAdminJWT.Use(echojwt.WithConfig(jwtConfig), m.IsAdmin)
+	ticketAdminJWT.GET("/:id", controllers.GetClassTicketByIDController)
+	ticketAdminJWT.GET("", controllers.GetClassTicketsController) // with params
+	ticketAdminJWT.POST("", controllers.CreateClassTicketController)
+	ticketAdminJWT.PUT("/:id", controllers.EditClassTicketController)
+	ticketAdminJWT.DELETE("/:id", controllers.DeleteClassTicketController)
 }

@@ -129,6 +129,7 @@ func ToReadableClassPackageList(classPackageObjectList []ClassPackage, err *Cust
 			return nil
 		}
 		readableClassPackageList[i] = readableClassPackage
+		
 	}
 	return readableClassPackageList
 }

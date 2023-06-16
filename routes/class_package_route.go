@@ -13,7 +13,7 @@ func AddClassPackageRoutes(e *echo.Echo) {
 	// for administrator
 	classPackageJWT := e.Group("/classes/packages")
 	classPackageJWT.Use(echojwt.WithConfig(jwtConfig), m.IsAdmin)
-	classPackageJWT.GET("/all", controllers.GetClassPackagesController) // with params
+	classPackageJWT.GET("", controllers.GetClassPackagesController) // with params
 	classPackageJWT.GET("/:id", controllers.GetClassPackageByIDController)
 	classPackageJWT.POST("", controllers.CreateClassPackageController)
 	classPackageJWT.PUT("/:id", controllers.EditClassPackageController)
