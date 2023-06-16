@@ -60,4 +60,8 @@ func InitRoute(e *echo.Echo) {
 	AddUserRoutes(e)
 	AddPlanRoutes(e)
 	AddMembershipRoutes(e)
+  AddLocationRoutes(e)
+	AddClassRoutes(e)
+	AddClassPackageRoutes(e)
+	AddClassTicketRoutes(e)
 }

@@ -25,6 +25,11 @@ func main() {
 		panic(err)
 	}
 
+  // err = configs.MigrateAndSeedDB()
+	// if err != nil {
+	// 	panic(err)
+	// }
+  
 	e := echo.New()
 
 	go scheduler.ScheduleMembershipActivityCheck()

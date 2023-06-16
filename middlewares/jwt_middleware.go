@@ -1,6 +1,8 @@
 package middlewares
 
 import (
+	"errors"
+	"fmt"
 	"gofit-api/configs"
 	"gofit-api/models"
 	"net/http"
@@ -18,7 +20,8 @@ func CreateToken(userID int, email string, isMembership bool, isAdmin bool) (str
 	claims["email"] = email
 	claims["isMembership"] = isMembership
 	claims["isAdmin"] = isAdmin
-	claims["exp"] = time.Now().Add(time.Hour * 1).Unix()
+	claims["exp"] = time.Now().Add(time.Hour * 12).Unix()
+	fmt.Println(claims["exp"])
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(configs.AppConfig.JWTKey))
@@ -74,6 +77,20 @@ func IsSameUser(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
+func ExtractTokenInfo(e echo.Context) (models.TokenInfo, error) {
+	var tokenInfo models.TokenInfo
+	user := e.Get("user").(*jwt.Token)
+	if user.Valid {
+		claims := user.Claims.(jwt.MapClaims)
+		tokenInfo.UserID = int(claims["userID"].(float64))
+		tokenInfo.Email = claims["email"].(string)
+		tokenInfo.IsAdmin = claims["isAdmin"].(bool)
+		tokenInfo.Expired = claims["exp"].(time.Time)
+		return tokenInfo, nil
+	}
+	return tokenInfo, errors.New("no token found")
+}
+
 func ExtractTokenUserID(e echo.Context) float64 {
 	user := e.Get("user").(*jwt.Token)
 	if user.Valid {
@@ -106,12 +123,15 @@ func IsMembership(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
-// func ExtractTokenIsAdmin(e echo.Context) bool {
-// 	user := e.Get("user").(*jwt.Token)
-// 	if user.Valid {
-// 		claims := user.Claims.(jwt.MapClaims)
-// 		isAdmin := claims["isAdmin"].(bool)
-// 		return isAdmin
-// 	}
-// 	return false
-// }
+func ExtractTokenIsAdmin(e echo.Context) bool {
+	tokenIsExist := e.Get("user") != nil
+	if tokenIsExist {
+		user := e.Get("user").(*jwt.Token)
+		if user.Valid {
+			claims := user.Claims.(jwt.MapClaims)
+			isAdmin := claims["isAdmin"].(bool)
+			return isAdmin
+		}
+	}
+	return false
+}
