@@ -229,6 +229,7 @@ func LoginUserController(c echo.Context) error {
 	var response models.LoginResponse
 	var err models.CustomError
 	var loginReq models.LoginRequest
+	var membershipObject models.Membership
 
 	err.ErrorMessage = c.Bind(&loginReq)
 	if err.IsError() {
@@ -260,8 +261,16 @@ func LoginUserController(c echo.Context) error {
 		return c.JSON(response.StatusCode, response)
 	}
 
+	database.GetMembershipByUserID(userObject.ID, &membershipObject, &err)
+	if err.IsError() {
+		if err.StatusCode == 500 {
+			response.ErrorOcurred(&err)
+			return c.JSON(response.StatusCode, response)
+		}
+	}
+
 	var token string
-	token, err.ErrorMessage = middlewares.CreateToken(int(userObject.ID), userObject.Email, userObject.IsAdmin)
+	token, err.ErrorMessage = middlewares.CreateToken(int(userObject.ID), userObject.Email, membershipObject.CheckMembershipActivity(), userObject.IsAdmin)
 	if err.IsError() {
 		err.StatusCode = 500
 		err.ErrorReason = "fail to create jwt token"

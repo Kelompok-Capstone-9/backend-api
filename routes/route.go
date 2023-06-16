@@ -8,6 +8,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	echojwt "github.com/labstack/echo-jwt"
+	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/echo/v4"
 )
 
@@ -54,9 +55,12 @@ func LoadJwtConfig() {
 
 func InitRoute(e *echo.Echo) {
 	middlewares.Logger(e)
+	e.Use(middleware.CORS())
 	LoadJwtConfig()
 	AddUserRoutes(e)
-	AddLocationRoutes(e)
+	AddPlanRoutes(e)
+	AddMembershipRoutes(e)
+  AddLocationRoutes(e)
 	AddClassRoutes(e)
 	AddClassPackageRoutes(e)
 	AddClassTicketRoutes(e)
