@@ -29,6 +29,7 @@ func main() {
 	// if err != nil {
 	// 	panic(err)
 	// }
+
 	e := echo.New()
 
 	go scheduler.ScheduleMembershipActivityCheck()

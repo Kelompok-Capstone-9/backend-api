@@ -69,14 +69,14 @@ func (rco *ReadableClassOnly) HideLink() {
 }
 
 type ReadableClass struct {
-	ID               int                    `json:"id"`
-	Name             string                 `json:"name"`
-	Description      string                 `json:"description"`
-	ClassType        string                 `json:"class_type"`
-	Link             string                 `json:"link"`
-	StartedAt        string                 `json:"started_at"`
-	ClassPackages    []ReadableClassPackage `json:"class_packages"`
-	Location         ReadableLocation       `json:"location"`
+	ID               int                        `json:"id"`
+	Name             string                     `json:"name"`
+	Description      string                     `json:"description"`
+	ClassType        string                     `json:"class_type"`
+	Link             string                     `json:"link"`
+	StartedAt        string                     `json:"started_at"`
+	ClassPackages    []ReadableClassPackageOnly `json:"class_packages"`
+	Location         ReadableLocation           `json:"location"`
 	ReadableMetadata `json:"metadata"`
 }
 
