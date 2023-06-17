@@ -9,11 +9,10 @@ import (
 )
 
 func AddLocationRoutes(e *echo.Echo) {
-	// for users or guests
 	e.GET("/locations", controllers.GetLocationsController)
 	e.GET("/locations/:id", controllers.GetLocationByIDController)
 
-	// for admins
+	// for administrator
 	locationJWT := e.Group("/admin/locations")
 	locationJWT.Use(echojwt.WithConfig(jwtConfig), m.IsAdmin)
 	locationJWT.POST("", controllers.CreateLocationController)
