@@ -52,7 +52,7 @@ func (m *Membership) ToReadableMembership(readableMembership *ReadableMembership
 	readableMembership.Plan.ReadableMetadata = *readableMembershipMetadata
 	readableMembership.StartDate = m.StartDate.Format(constants.DATETIME_FORMAT)
 	readableMembership.EndDate = m.EndDate.Format(constants.DATETIME_FORMAT)
-	readableMembership.IsActive = m.CheckMembershipActivity()
+	readableMembership.IsActive = m.IsActive
 	readableMembership.ReadableMetadata = *readablePlanMetadata
 }
 
