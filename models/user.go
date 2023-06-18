@@ -10,18 +10,21 @@ import (
 
 // User Object for gorm
 type User struct {
-	ID           uint
-	Name         string
-	Email        string `gorm:"unique"`
-	Password     string
-	Gender       Gender `gorm:"type:enum('pria','wanita')"`
-	Height       float32
-	GoalHeight   float32
-	Weight       float32
-	GoalWeight   float32
-	IsAdmin      bool
-	ClassTickets []ClassTicket
-	Metadata     `gorm:"embedded"`
+	ID             uint
+	Name           string
+	Email          string `gorm:"unique"`
+	Password       string
+	Gender         Gender `gorm:"type:enum('pria','wanita')"`
+	Height         float32
+	GoalHeight     float32
+	Weight         float32
+	GoalWeight     float32
+	TrainingLevel  TrainingLevel `gorm:"type:enum('beginner','intermediate','advance');default:beginner"`
+	ProfilePicture string
+	IsAdmin        bool
+	OTP            int `gorm:"size:4"`
+	ClassTickets   []ClassTicket
+	Metadata       `gorm:"embedded"`
 }
 
 func (u *User) InsertID(userIDString string, err *CustomError) {
@@ -58,6 +61,8 @@ func (u *User) ToReadableUser(readableUser *ReadableUser) {
 	readableUser.GoalHeight = u.GoalHeight
 	readableUser.Weight = u.Weight
 	readableUser.GoalWeight = u.GoalWeight
+	readableUser.TrainingLevel = string(u.TrainingLevel)
+	readableUser.ProfilePicture = u.ProfilePicture
 	readableUser.ReadableMetadata = *readableMetadata
 }
 
@@ -72,6 +77,8 @@ type ReadableUser struct {
 	GoalHeight       float32 `json:"goal_height"`
 	Weight           float32 `json:"weight"`
 	GoalWeight       float32 `json:"goal_weight"`
+	TrainingLevel    string  `json:"training_level"`
+	ProfilePicture   string  `json:"profile_picture"`
 	ReadableMetadata `json:"metadata"`
 }
 
@@ -101,6 +108,13 @@ func (ru *ReadableUser) ToUserObject(userObject *User, err *CustomError) {
 		err.ErrorReason = "invalid gender input"
 	}
 
+	var userTrainingLevel TrainingLevel
+	userTrainingLevel, err.ErrorMessage = GenerateTrainingLevel(ru.TrainingLevel)
+	if err.IsError() {
+		err.StatusCode = 400
+		err.ErrorReason = "invalid training level input"
+	}
+
 	userObject.ID = uint(ru.ID)
 	userObject.Name = ru.Name
 	userObject.Email = ru.Email
@@ -110,7 +124,37 @@ func (ru *ReadableUser) ToUserObject(userObject *User, err *CustomError) {
 	userObject.GoalHeight = ru.GoalHeight
 	userObject.Weight = ru.Weight
 	userObject.GoalWeight = ru.GoalWeight
+	userObject.TrainingLevel = userTrainingLevel
+	userObject.ProfilePicture = ru.ProfilePicture
 	// userObject.Metadata = *metadata
+}
+
+func (ru *ReadableUser) EditValidate() error {
+	allFieldBlank := ru.Name == "" && ru.Email == "" && ru.Password == "" && ru.Gender == "" && ru.Height == 0 && ru.GoalHeight == 0 && ru.Weight == 0 && ru.GoalWeight == 0 && ru.TrainingLevel == "" && ru.ProfilePicture == ""
+	if allFieldBlank {
+		return errors.New("all field is blank. nothing to change")
+	}
+
+	if ru.Email != "" {
+		_, emailError := mail.ParseAddress(ru.Email)
+		if emailError != nil {
+			return errors.New("invalid email " + ru.Email)
+		}
+	}
+
+	if ru.Gender != "" {
+		if ru.Gender != "pria" && ru.Gender != "wanita" {
+			return errors.New("invalid gender. must containt pria or wanita")
+		}
+	}
+
+	if ru.TrainingLevel != "" {
+		if ru.TrainingLevel != "beginner" && ru.TrainingLevel != "intermediate" && ru.TrainingLevel != "advance" {
+			return errors.New("invalid training level. must containt beginner or intermediate or advance")
+		}
+	}
+
+	return nil
 }
 
 func (ru *ReadableUser) Validate() error {
@@ -127,6 +171,8 @@ func (ru *ReadableUser) Validate() error {
 		return errors.New("invalid height")
 	case ru.Weight == 0:
 		return errors.New("invalid weight")
+	case ru.TrainingLevel == "":
+		return errors.New("invalid training level")
 	}
 
 	_, emailError := mail.ParseAddress(ru.Email)
@@ -136,6 +182,10 @@ func (ru *ReadableUser) Validate() error {
 
 	if ru.Gender != "pria" && ru.Gender != "wanita" {
 		return errors.New("invalid gender. must containt pria or wanita")
+	}
+
+	if ru.TrainingLevel != "beginner" && ru.TrainingLevel != "intermediate" && ru.TrainingLevel != "advance" {
+		return errors.New("invalid training level. must containt beginner or intermediate or advance")
 	}
 
 	return nil

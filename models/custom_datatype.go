@@ -61,8 +61,8 @@ func GenerateClassPeriod(classPeriodString string) (ClassPeriod, error) {
 type ClassTicketStatus string
 
 const (
-	Booked   ClassTicketStatus = "booked"
-	Pending  ClassTicketStatus = "pending"
+	Booked    ClassTicketStatus = "booked"
+	Pending   ClassTicketStatus = "pending"
 	Cancelled ClassTicketStatus = "cancelled"
 )
 
@@ -74,6 +74,26 @@ func GenerateClassTicketStatus(classTicketStatusString string) (ClassTicketStatu
 		return Pending, nil
 	case string(Cancelled):
 		return Cancelled, nil
+	}
+	return "", errors.New("invalid class ticket status")
+}
+
+type TrainingLevel string
+
+const (
+	Beginner     TrainingLevel = "beginner"
+	Intermediate TrainingLevel = "intermediate"
+	Advance      TrainingLevel = "advance"
+)
+
+func GenerateTrainingLevel(trainingLevelString string) (TrainingLevel, error) {
+	switch trainingLevelString {
+	case string(Beginner):
+		return Beginner, nil
+	case string(Intermediate):
+		return Intermediate, nil
+	case string(Advance):
+		return Advance, nil
 	}
 	return "", errors.New("invalid class ticket status")
 }

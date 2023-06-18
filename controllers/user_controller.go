@@ -129,6 +129,13 @@ func EditUserController(c echo.Context) error {
 		return c.JSON(response.StatusCode, response)
 	}
 
+	err.ErrorMessage = readableModifiedUser.EditValidate()
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		response.ErrorReason = "invalid field"
+		return c.JSON(response.StatusCode, response)
+	}
+
 	database.GetUser(&userObject, &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
