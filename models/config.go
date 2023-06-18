@@ -14,7 +14,4 @@ type Config struct {
 	SMTPHost string `mapstructure:"SMTP_HOST"`
 	SMTPUsername string `mapstructure:"SMTP_USERNAME"`
 	SMTPPassword string `mapstructure:"SMTP_PASSWORD"`
-
-	JWTKey  string `mapstructure:"JWT_KEY"`
-	AppPort string `mapstructure:"APP_PORT"`
 }
