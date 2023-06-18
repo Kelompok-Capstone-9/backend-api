@@ -2,6 +2,7 @@ package main
 
 import (
 	"gofit-api/configs"
+	assetsmanager "gofit-api/lib/assets_manager"
 	"gofit-api/lib/scheduler"
 	"gofit-api/routes"
 
@@ -9,8 +10,13 @@ import (
 )
 
 func main() {
+	err := assetsmanager.InitAssetsFile()
+	if err != nil {
+		panic(err)
+	}
+
 	configs.LoadConfig()
-	err := configs.InitDB()
+	err = configs.InitDB()
 	if err != nil {
 		panic(err)
 	}
@@ -25,7 +31,7 @@ func main() {
 	// 	panic(err)
 	// }
 
-  // err = configs.MigrateAndSeedDB()
+	// err = configs.MigrateAndSeedDB()
 	// if err != nil {
 	// 	panic(err)
 	// }

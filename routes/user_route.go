@@ -15,8 +15,9 @@ func AddUserRoutes(e *echo.Echo) {
 
 	userJWT := e.Group("/users")
 	userJWT.Use(echojwt.WithConfig(jwtConfig))
-	userJWT.GET("", controllers.GetUsersController, m.IsAdmin)
+	userJWT.GET("", controllers.GetUsersController, m.IsAdmin) // for admin
 	userJWT.GET("/:id", controllers.GetUserController, m.IsSameUser)
 	userJWT.PUT("/:id", controllers.EditUserController, m.IsSameUser)
-	userJWT.DELETE("/:id", controllers.DeleteUserController, m.IsAdmin)
+	userJWT.POST("/profile/:id", controllers.UploadProfilePictureController, m.IsSameUser) // for upload profile picture
+	userJWT.DELETE("/:id", controllers.DeleteUserController, m.IsAdmin)                    // for admin
 }

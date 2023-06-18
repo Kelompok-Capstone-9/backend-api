@@ -99,6 +99,7 @@ func (rm *ReadableMembership) ToMembershipObject(membershipObject *Membership, e
 	}
 	membershipObject.StartDate = started
 	membershipObject.EndDate = ended
+	membershipObject.IsActive = rm.IsActive
 	// membershipObject.CreatedAt = rm.CreatedAt
 	// membershipObject.UpdatedAt = rm.UpdatedAt
 }

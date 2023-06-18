@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 	"net/mail"
 	"reflect"
@@ -196,7 +197,7 @@ func EditUserController(c echo.Context) error {
 	}
 
 	readableUser.HidePassword()
-	response.Success(http.StatusCreated, "success edit user", readableUser)
+	response.Success(http.StatusOK, "success edit user", readableUser)
 	return c.JSON(http.StatusOK, response)
 }
 
@@ -290,5 +291,67 @@ func LoginUserController(c echo.Context) error {
 	readableUser.HidePassword()
 
 	response.Success("success login", readableUser, token)
+	return c.JSON(response.StatusCode, response)
+}
+
+func UploadProfilePictureController(c echo.Context) error {
+	var userObject models.User
+	var imageFile models.UploadImage
+	var err models.CustomError
+
+	var idParam models.IDParameter
+	var response models.GeneralResponse
+
+	// get user info
+	idParam.IDString = c.Param("id")
+	idParam.ConvertIDStringToINT(&err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	userObject.ID = uint(idParam.ID)
+	database.GetUser(&userObject, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	// image file
+	imageFile.Name = fmt.Sprintf("user%d", userObject.ID)
+	imageFile.Image, err.ErrorMessage = c.FormFile("file")
+	if err.IsError() {
+		err.NewError(http.StatusBadRequest, err.ErrorMessage, "invalid uploaded file")
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	err.ErrorMessage = imageFile.VerifyImageExtension()
+	if err.IsError() {
+		err.NewError(http.StatusBadRequest, err.ErrorMessage, "invalid uploaded file")
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	var imagePath string
+	imagePath, err.ErrorMessage = imageFile.CopyIMGToAssets()
+	if err.IsError() {
+		err.NewError(http.StatusInternalServerError, err.ErrorMessage, "something went wrong when upload file")
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	userObject.ProfilePicture = imagePath
+	database.UpdateUser(&userObject, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	var readableUser models.ReadableUser
+	userObject.ToReadableUser(&readableUser)
+	readableUser.HidePassword()
+
+	response.Success(http.StatusOK, "success upload user profile image", readableUser)
 	return c.JSON(response.StatusCode, response)
 }

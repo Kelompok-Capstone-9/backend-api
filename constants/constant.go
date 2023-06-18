@@ -6,4 +6,7 @@ const (
 	DATETIME_FORMAT = "2006-01-02 15:04:05"
 	DATE_FORMAT     = "2006-01-02"
 	TIME_FORMAT     = "15:04:05"
+
+	PROFILE_IMG_DST = "assets/img/profile"
+	CLASS_IMG_DST   = "assets/img/class"
 )
