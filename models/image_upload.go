@@ -35,6 +35,14 @@ func (ui *UploadImage) VerifyImageExtension() error {
 	return errors.New("invalid file type. " + ui.Image.Filename + " is not an image")
 }
 
+func (ui *UploadImage) Validate() error {
+	switch{
+	case ui.Image == nil:
+		return errors.New("no file need to be uploaded")
+	}
+	return nil
+}
+
 func (ui *UploadImage) CopyIMGToAssets() (string, error) {
 	// source file
 	source, err := ui.Image.Open()
