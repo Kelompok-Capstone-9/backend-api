@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"gofit-api/lib/database"
 	"gofit-api/middlewares"
 	"gofit-api/models"
@@ -276,4 +277,77 @@ func DeleteClassController(c echo.Context) error {
 	}
 	response.Success(http.StatusOK, "success delete class", deletedClass)
 	return c.JSON(http.StatusOK, response)
+}
+
+func UploadClassImageController(c echo.Context) error {
+	var classObject models.Class
+	var imageFile models.UploadImage
+	var err models.CustomError
+
+	var idParam models.IDParameter
+	var response models.GeneralResponse
+
+	// get user info
+	idParam.IDString = c.Param("id")
+	idParam.ConvertIDStringToINT(&err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	classObject.ID = uint(idParam.ID)
+	database.GetClass(&classObject, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	// image file
+	imageFile.Name = fmt.Sprintf("class%d", classObject.ID)
+	imageFile.Image, err.ErrorMessage = c.FormFile("file")
+	if err.IsError() {
+		err.NewError(http.StatusBadRequest, err.ErrorMessage, "invalid uploaded file")
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	err.ErrorMessage = imageFile.Validate()
+	if err.IsError() {
+		err.NewError(http.StatusBadRequest, err.ErrorMessage, "invalid uploaded file")
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	err.ErrorMessage = imageFile.VerifyImageExtension()
+	if err.IsError() {
+		err.NewError(http.StatusBadRequest, err.ErrorMessage, "invalid uploaded file")
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	var imagePath string
+	imagePath, err.ErrorMessage = imageFile.CopyIMGToAssets()
+	if err.IsError() {
+		err.NewError(http.StatusInternalServerError, err.ErrorMessage, "something went wrong when upload file")
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	classObject.ImageBanner = imagePath
+	database.UpdateClass(&classObject, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	var readableClass models.ReadableClass
+	classObject.ToReadableClass(&readableClass, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+	readableClass.HideLink()
+
+	response.Success(http.StatusOK, "success upload class banner image", readableClass)
+	return c.JSON(response.StatusCode, response)
 }

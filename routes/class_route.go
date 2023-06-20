@@ -21,4 +21,5 @@ func AddClassRoutes(e *echo.Echo) {
 	classJWT.POST("", controllers.CreateClassController)
 	classJWT.PUT("/:id", controllers.EditClassController)
 	classJWT.DELETE("/:id", controllers.DeleteClassController)
+	classJWT.POST("/banner/:id", controllers.UploadClassImageController) // for upload class image banner
 }

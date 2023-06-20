@@ -15,6 +15,7 @@ type Class struct {
 	Link          string
 	LocationID    *uint
 	Location      Location
+	ImageBanner   string
 	ClassPackages []ClassPackage
 	Metadata      `gorm:"embedded"`
 }
@@ -35,6 +36,7 @@ func (c *Class) ToReadableClass(readableClass *ReadableClass, err *CustomError) 
 	readableClass.StartedAt = c.StartedAt.Format(constants.DATETIME_FORMAT)
 	readableClass.ClassPackages = readableClassPackages
 	c.Location.ToReadableLocation(&readableClass.Location)
+	readableClass.ImageBanner = c.ImageBanner
 	readableClass.ReadableMetadata = *readableClassMetadata
 }
 
@@ -59,6 +61,7 @@ type ReadableClassOnly struct {
 	Link             string           `json:"link"`
 	StartedAt        string           `json:"started_at"`
 	Location         ReadableLocation `json:"location"`
+	ImageBanner      string           `json:"image_banner"`
 	ReadableMetadata `json:"metadata"`
 }
 
@@ -77,6 +80,7 @@ type ReadableClass struct {
 	StartedAt        string                     `json:"started_at"`
 	ClassPackages    []ReadableClassPackageOnly `json:"class_packages"`
 	Location         ReadableLocation           `json:"location"`
+	ImageBanner      string                     `json:"image_banner"`
 	ReadableMetadata `json:"metadata"`
 }
 
@@ -105,7 +109,7 @@ func (rc *ReadableClass) Validate() error {
 }
 
 func (rc *ReadableClass) EditValidate() error {
-	allFieldBlank := rc.Name == "" && rc.Description == "" && rc.ClassType == "" && rc.StartedAt == "" && rc.Location.ID == 0
+	allFieldBlank := rc.Name == "" && rc.Description == "" && rc.ClassType == "" && rc.StartedAt == "" && rc.Location.ID == 0 && rc.ImageBanner == ""
 	if allFieldBlank {
 		return errors.New("all field is blank. nothing to change")
 	}
@@ -147,6 +151,7 @@ func (rc *ReadableClass) ToClassObject(classObject *Class, err *CustomError) {
 	classObject.Link = rc.Link
 	classObject.StartedAt = startedAt
 	classObject.Location.ID = uint(rc.Location.ID)
+	classObject.ImageBanner = rc.ImageBanner
 }
 
 func ToReadableClassList(classObjectList []Class, err *CustomError) []ReadableClass {

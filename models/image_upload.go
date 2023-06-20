@@ -8,6 +8,7 @@ import (
 	"mime/multipart"
 	"os"
 	"path"
+	"strings"
 )
 
 type UploadImage struct {
@@ -39,6 +40,8 @@ func (ui *UploadImage) Validate() error {
 	switch{
 	case ui.Image == nil:
 		return errors.New("no file need to be uploaded")
+	case ui.Image.Size == 0:
+		return fmt.Errorf("file size is = %d", ui.Image.Size)
 	}
 	return nil
 }
@@ -52,7 +55,14 @@ func (ui *UploadImage) CopyIMGToAssets() (string, error) {
 	defer source.Close()
 
 	// destination
-	copyDestionation := fmt.Sprintf("%s/%s%s", constants.PROFILE_IMG_DST, ui.Name, ui.Extension)
+	var copyDestionation string
+	switch{
+	case strings.HasPrefix(ui.Name, "user"):
+		copyDestionation += fmt.Sprintf("%s/%s%s", constants.PROFILE_IMG_DST, ui.Name, ui.Extension)
+	case strings.HasPrefix(ui.Name, "class"):
+		copyDestionation += fmt.Sprintf("%s/%s%s", constants.CLASS_IMG_DST, ui.Name, ui.Extension)
+	}
+
 	dst, err := os.Create(copyDestionation)
 	if err != nil {
 		return "", err
