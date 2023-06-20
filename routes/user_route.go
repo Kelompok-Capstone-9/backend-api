@@ -12,6 +12,7 @@ func AddUserRoutes(e *echo.Echo) {
 
 	e.POST("/register", controllers.CreateUserController)
 	e.POST("/login", controllers.LoginUserController)
+	e.POST("/forgot", controllers.ForgotPasswordController)
 
 	userJWT := e.Group("/users")
 	userJWT.Use(echojwt.WithConfig(jwtConfig))

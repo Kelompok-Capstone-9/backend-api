@@ -7,6 +7,14 @@ type Config struct {
 	DBUsername string `mapstructure:"DB_USERNAME"`
 	DBPassword string `mapstructure:"DB_PASSWORD"`
 
+	RedisAddress string `mapstructure:"REDIS_ADDRESS"`
+	RedisPassword string `mapstructure:"REDIS_PASSWORD"`
+	RedisDatabase string `mapstructure:"REDIS_DATABASE"`
+
+	SMTPHost string `mapstructure:"SMTP_HOST"`
+	SMTPUsername string `mapstructure:"SMTP_USERNAME"`
+	SMTPPassword string `mapstructure:"SMTP_PASSWORD"`
+
 	JWTKey  string `mapstructure:"JWT_KEY"`
 	AppPort string `mapstructure:"APP_PORT"`
 }

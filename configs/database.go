@@ -33,7 +33,7 @@ func MigrateDB() error {
 		models.User{},
 		models.Membership{},
 		models.Plan{},
-    models.Location{},
+		models.Location{},
 		models.Class{},
 		models.ClassPackage{},
 		models.ClassTicket{},

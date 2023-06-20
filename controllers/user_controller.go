@@ -1,12 +1,14 @@
 package controllers
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/mail"
 	"reflect"
 
 	"gofit-api/lib/database"
+	"gofit-api/lib/mailer"
 	"gofit-api/middlewares"
 	"gofit-api/models"
 
@@ -364,12 +366,11 @@ func UploadProfilePictureController(c echo.Context) error {
 }
 
 func ForgotPasswordController(c echo.Context) error {
-	var response models.LoginResponse
+	var response models.ResponseMetadata
 	var err models.CustomError
-	var loginReq models.LoginRequest
-	var membershipObject models.Membership
+	var otp models.OTP
 
-	err.ErrorMessage = c.Bind(&loginReq)
+	err.ErrorMessage = c.Bind(&otp)
 	if err.IsError() {
 		err.StatusCode = 400
 		err.ErrorReason = "invalid body request"
@@ -377,49 +378,37 @@ func ForgotPasswordController(c echo.Context) error {
 		return c.JSON(response.StatusCode, response)
 	}
 
-	// validate email
-	_, emailError := mail.ParseAddress(loginReq.Email)
-	if emailError != nil {
-		response.StatusCode = http.StatusBadRequest
-		response.Message = "invalid email"
-		response.ErrorReason = loginReq.Email + " is not an email"
-		return c.JSON(response.StatusCode, response)
-	}
-
-	userObject := database.Login(loginReq.Email, &err)
-	if err.IsError() {
+	if otp.Email == "" {
+		err.NewError(http.StatusBadRequest, errors.New("invalid email"), "email cant be blank")
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
-	}
-
-	match := userObject.MatchingPassword(loginReq.Password)
-	if !match {
-		err.FailLogin()
-		response.ErrorOcurred(&err)
-		return c.JSON(response.StatusCode, response)
-	}
-
-	database.GetMembershipByUserID(userObject.ID, &membershipObject, &err)
-	if err.IsError() {
-		if err.StatusCode == 500 {
+	} else {
+		_, emailError := mail.ParseAddress(otp.Email)
+		if emailError != nil {
+			err.NewError(http.StatusBadRequest, errors.New("" + otp.Email + " is not an email"), "invalid email")
 			response.ErrorOcurred(&err)
 			return c.JSON(response.StatusCode, response)
 		}
 	}
 
-	var token string
-	token, err.ErrorMessage = middlewares.CreateToken(int(userObject.ID), userObject.Email, membershipObject.CheckMembershipActivity(), userObject.IsAdmin)
+	var message string
+	err.ErrorMessage = otp.GenerateOTP()
 	if err.IsError() {
-		err.StatusCode = 500
-		err.ErrorReason = "fail to create jwt token"
+		err.StatusCode = http.StatusInternalServerError
+		err.ErrorReason = "something went wrong when generation OTP"
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
-	var readableUser models.ReadableUser
-	userObject.ToReadableUser(&readableUser)
-	readableUser.HidePassword()
+	message, err.ErrorMessage = mailer.SendOTP(otp.Email, otp.Code)
+	if err.IsError() {
+		err.StatusCode = http.StatusInternalServerError
+		err.ErrorReason = "something went wrong when sending email"
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
 
-	response.Success("success login", readableUser, token)
+	response.StatusCode = http.StatusOK
+	response.Message = message
 	return c.JSON(response.StatusCode, response)
 }

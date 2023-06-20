@@ -1,6 +1,8 @@
 package models
 
-import "errors"
+import (
+	"errors"
+)
 
 // Gender product type
 type Gender string
