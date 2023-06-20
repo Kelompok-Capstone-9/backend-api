@@ -11,7 +11,7 @@ import (
 func GetTransactions(offset, limit int, err *models.CustomError) ([]models.ReadableTransaction, int) {
 	var transactionObjectList []models.Transaction
 
-	result := configs.DB.Preload("User").Preload("Plan").Offset(offset).Limit(limit).Find(&transactionObjectList)
+	result := configs.DB.Offset(offset).Limit(limit).Find(&transactionObjectList)
 	if result.Error != nil {
 		err.FailRetrieveDataFromDB(result.Error)
 		return nil, 0
@@ -21,7 +21,7 @@ func GetTransactions(offset, limit int, err *models.CustomError) ([]models.Reada
 }
 
 func GetTransaction(transactionObject *models.Transaction, err *models.CustomError) {
-	result := configs.DB.Preload("User").Preload("Plan").First(transactionObject)
+	result := configs.DB.First(transactionObject)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			err.NoRecordFound(result.Error)
@@ -32,7 +32,7 @@ func GetTransaction(transactionObject *models.Transaction, err *models.CustomErr
 }
 
 func GetTransactionByUserID(userID uint, transactionObject *models.Transaction, err *models.CustomError) {
-	result := configs.DB.Where("user_id = ? AND is_active = true", userID).Preload("User").Preload("Plan").First(transactionObject)
+	result := configs.DB.First(transactionObject)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			err.NoRecordFound(result.Error)
@@ -48,7 +48,7 @@ func GetTransactionByUserName(nameUser string, err *models.CustomError) ([]model
 	configs.DB.Model(&models.User{}).Select("id").Where("name LIKE ?", nameUser).Find(&usersID)
 
 	var transactionObjectList []models.Transaction
-	result := configs.DB.Where("user_id IN ?", usersID).Preload("User").Preload("Plan").Find(&transactionObjectList)
+	result := configs.DB.Find(&transactionObjectList)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			err.NoRecordFound(result.Error)
