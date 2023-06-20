@@ -53,15 +53,36 @@ type LocationParameters struct {
 	City    string
 }
 
-func (lp *LocationParameters) QueryString() string {
+func (lp *LocationParameters) ParamIsSet() bool {
+	isSet := lp.Name != "" || lp.Address != "" || lp.City != ""
+	return isSet
+}
+
+func (lp *LocationParameters) DecodeToQueryString() string {
 	var queryString string
+	isFilled := func() bool {
+		return len(queryString) > 0
+	}
+
 	if lp.Name != "" {
-		lp.Name = "%" + lp.Name + "%"
-		switch queryString {
-		case "":
-			queryString += "name LIKE " + lp.Name
-		default:
-			queryString += "AND name LIKE " + lp.Name
+		if isFilled() {
+			queryString += fmt.Sprintf(" AND name = '%s'", lp.Name)
+		} else {
+			queryString += fmt.Sprintf("name = '%s'", lp.Name)
+		}
+	}
+	if lp.Address != "" {
+		if isFilled() {
+			queryString += fmt.Sprintf(" AND address = '%s'", lp.Address)
+		} else {
+			queryString += fmt.Sprintf("address = '%s'", lp.Address)
+		}
+	}
+	if lp.City != "" {
+		if isFilled() {
+			queryString += fmt.Sprintf(" AND city = '%s'", lp.City)
+		} else {
+			queryString += fmt.Sprintf("city = '%s'", lp.City)
 		}
 	}
 	return queryString

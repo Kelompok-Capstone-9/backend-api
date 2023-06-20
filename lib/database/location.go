@@ -20,28 +20,29 @@ func GetLocations(offset, limit int, err *models.CustomError) ([]models.Readable
 	return models.ToReadableLocationList(locationObjectList, err), int(result.RowsAffected)
 }
 
-// func GetInstructorsWithParams(params *models.GeneralParameter, err *models.CustomError) ([]models.ReadableInstructor, int) {
-// 	var instructorObjectList []models.Instructor
+func GetLocationsWithParams(query string, page *models.Pages, err *models.CustomError) ([]models.ReadableLocation, int) {
+	var locationObjectList []models.Location
 
-// 	result := configs.DB.Where("name LIKE ?", params.Name).Offset(params.Page.Offset).Limit(params.Page.Limit).Find(&instructorObjectList)
-// 	if result.Error != nil {
-// 		err.FailRetrieveDataFromDB(result.Error)
-// 		return nil, 0
-// 	}
+	result := configs.DB.Where(query).Offset(page.Offset).Limit(page.Limit).Find(&locationObjectList)
+	if result.Error != nil {
+		err.FailRetrieveDataFromDB(result.Error)
+		return nil, 0
+	}
 
-// 	return models.ToReadableInstructorList(instructorObjectList, err), int(result.RowsAffected)
-// }
+	return models.ToReadableLocationList(locationObjectList, err), int(result.RowsAffected)
+}
 
-// func GetInstructor(instructorObject *models.Instructor, err *models.CustomError) {
-// 	result := configs.DB.First(instructorObject)
-// 	if result.Error != nil {
-// 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-// 			err.NoRecordFound(result.Error)
-// 		} else {
-// 			err.FailRetrieveDataFromDB(result.Error)
-// 		}
-// 	}
-// }
+func GetIDLocationsWithParams(query string, page *models.Pages, err *models.CustomError) []int {
+	var locationsIDs []int
+
+	result := configs.DB.Model(&models.Location{}).Select("id").Where(query).Find(&locationsIDs)
+	if result.Error != nil {
+		err.FailRetrieveDataFromDB(result.Error)
+		return nil
+	}
+
+	return locationsIDs
+}
 
 func GetLocation(locationObject *models.Location, err *models.CustomError) {
 	result := configs.DB.First(locationObject)
