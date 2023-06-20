@@ -9,7 +9,7 @@ import (
 // Transaction represents the transaction object in the database
 type Transaction struct {
 	ID              uint          `gorm:"column:id"`
-	Product         string        `gorm:"type:enum('pending','completed', 'canceled' )"`
+	Product         string        `gorm:"type:enum('1 monthly','3 monthly', 'yearly' )"`
 	ProductID       int           `gorm:"column:product_id"`
 	Amount          int           `gorm:"column:amount"`
 	InvoiceID       string        `gorm:"column:invoice_id"`
