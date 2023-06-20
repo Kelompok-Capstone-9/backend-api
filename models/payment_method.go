@@ -9,7 +9,7 @@ import (
 type PaymentMethod struct {
 	ID           uint `gorm:"column:id"`
 	Name         string
-	Transactions []Transactions `gorm:"constraint:OnUpdate:CASCADE"`
+	Transactions []Transaction `gorm:"constraint:OnUpdate:CASCADE"`
 	Metadata     `gorm:"embedded"`
 }
 
