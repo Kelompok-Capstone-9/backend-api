@@ -10,3 +10,8 @@ type ForgotRequest struct{
 	Email string `json:"email"`
 	
 }
+
+type ClassTicketPaymentRequest struct{
+	ReadablePaymentMethod `json:"payment_method"`
+	CreditCard `json:"credit_card"`
+}

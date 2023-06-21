@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"gofit-api/constants"
 	"strconv"
 	"time"
@@ -9,13 +10,13 @@ import (
 // Transaction represents the transaction object in the database
 type Transaction struct {
 	ID              uint          `gorm:"column:id"`
-	Product         string        `gorm:"type:enum('1 monthly','3 monthly', 'yearly' )"`
+	Product         ProductType   `gorm:"type:enum('membership','class')"`
 	ProductID       int           `gorm:"column:product_id"`
 	Amount          int           `gorm:"column:amount"`
-	InvoiceID       string        `gorm:"column:invoice_id"`
+	TransactionCode string        `gorm:"column:transaction_code"`
 	PaymentMethodID int           `gorm:"column:payment_method_id"`
 	PaymentMethod   PaymentMethod `gorm:"constraint:OnUpdate:CASCADE"`
-	Status          string        `gorm:"type:enum('pending','completed', 'canceled' )"`
+	Status          string        `gorm:"type:enum('completed','pending', 'cancel');default:pending"`
 	CreatedAt       time.Time     `gorm:"column:created_at"`
 	UpdatedAt       time.Time     `gorm:"column:updated_at"`
 	Metadata        `gorm:"embedded"`
@@ -32,15 +33,24 @@ func (t *Transaction) InsertID(itemIDString string, err *CustomError) {
 	t.ID = uint(itemID)
 }
 
+func (t *Transaction) GenerateTransactionCode() {
+	switch t.Product {
+	case MembershipProduct:
+		t.TransactionCode = fmt.Sprintf("TM%d", t.ProductID)
+	case ClassProduct:
+		t.TransactionCode = fmt.Sprintf("TK%d", t.ProductID)
+	}
+}
+
 // ToReadableTransaction converts the transaction object to readable format
 func (t *Transaction) ToReadableTransaction(readableTransaction *ReadableTransaction) {
 	readableTransactionMetadata := t.ToReadableMetadata()
 	// readablePaymentMethodMetadata := t.PaymentMethod.ToReadableMetadata()
 	readableTransaction.ID = int(t.ID)
-	readableTransaction.Product = t.Product
+	readableTransaction.Product = string(t.Product)
 	readableTransaction.ProductID = t.ProductID
 	readableTransaction.Amount = t.Amount
-	readableTransaction.InvoiceID = t.InvoiceID
+	readableTransaction.TransactionCode = t.TransactionCode
 	readableTransaction.Status = t.Status
 	readableTransaction.PaymentMethod.ReadableMetadata = *readableTransactionMetadata
 }
@@ -51,7 +61,7 @@ type ReadableTransaction struct {
 	Product          string                `json:"product"`
 	ProductID        int                   `json:"product_id"`
 	Amount           int                   `json:"amount"`
-	InvoiceID        string                `json:"invoice_id"`
+	TransactionCode  string                `json:"invoice_id"`
 	PaymentMethod    ReadablePaymentMethod `json:"payment_method"`
 	Status           string                `json:"status"`
 	CreatedAt        string                `json:"created_at"`
@@ -70,11 +80,17 @@ func (rt *ReadableTransaction) InsertID(itemIDString string, err *CustomError) {
 
 // ToTransactionObject converts the readable transaction to a transaction object
 func (rt *ReadableTransaction) ToTransactionObject(transactionObject *Transaction, err *CustomError) {
+	var transactionProductType ProductType
+	transactionProductType, err.ErrorMessage = GenerateProductType(rt.Product)
+	if err.IsError() {
+		err.NewError(400, err.ErrorMessage, "invalid product type")
+	}
+
 	transactionObject.ID = uint(rt.ID)
-	transactionObject.Product = rt.Product
+	transactionObject.Product = transactionProductType
 	transactionObject.ProductID = rt.ProductID
 	transactionObject.Amount = rt.Amount
-	transactionObject.InvoiceID = rt.InvoiceID
+	transactionObject.TransactionCode = rt.TransactionCode
 	transactionObject.Status = rt.Status
 	transactionObject.CreatedAt, _ = time.Parse(constants.DATETIME_FORMAT, rt.CreatedAt)
 	transactionObject.UpdatedAt, _ = time.Parse(constants.DATETIME_FORMAT, rt.UpdatedAt)
@@ -91,4 +107,9 @@ func ToReadableTransactionList(transactionModelList []Transaction) []ReadableTra
 	}
 
 	return readableTransactionList
+}
+
+type MidtransCallBack struct {
+	TransactionStatus string `json:"transaction_status"`
+	TransactionCode   string `json:"order_id"`
 }
