@@ -18,7 +18,7 @@ func PlanTotalData() int {
 func GetPlans(page *models.Pages, err *models.CustomError) ([]models.ReadablePlan, int) {
 	var planObjectList []models.Plan
 
-	result := configs.DB.Offset(page.Offset).Limit(page.Limit).Find(&planObjectList)
+	result := configs.DB.Scopes(PaginatedQuery(page)).Find(&planObjectList)
 	if result.Error != nil {
 		err.FailRetrieveDataFromDB(result.Error)
 		return nil, 0

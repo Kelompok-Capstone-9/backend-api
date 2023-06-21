@@ -17,10 +17,10 @@ func UserTotalData() int {
 	return int(totalData)
 }
 
-func GetUsers(page *models.Pages , err *models.CustomError) ([]models.ReadableUser, int) {
+func GetUsers(page *models.Pages, err *models.CustomError) ([]models.ReadableUser, int) {
 	var userObjectList []models.User
 
-	result := configs.DB.Offset(page.Offset).Limit(page.Limit).Find(&userObjectList)
+	result := configs.DB.Scopes(PaginatedQuery(page)).Find(&userObjectList)
 	if result.Error != nil {
 		err.FailRetrieveDataFromDB(result.Error)
 		return nil, 0

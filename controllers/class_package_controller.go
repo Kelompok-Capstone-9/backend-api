@@ -18,12 +18,12 @@ func GetClassPackagesController(c echo.Context) error {
 
 	// pagination
 	page.PageString = c.QueryParam("page")
-	page.ConvertPageStringToINT(&err)
+	page.PageSizeString = c.QueryParam("page_size")
+	page.Paginate(&err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
-	page.CalcOffsetLimit()
 
 	//quey params
 	params.PeriodString = c.QueryParam("period")

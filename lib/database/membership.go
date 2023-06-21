@@ -17,7 +17,7 @@ func MembershipTotalData() int {
 func GetMemberships(page *models.Pages, err *models.CustomError) ([]models.ReadableMembership, int) {
 	var membershipObjectList []models.Membership
 
-	result := configs.DB.Preload("User").Preload("Plan").Offset(page.Offset).Limit(page.Limit).Find(&membershipObjectList)
+	result := configs.DB.Preload("User").Preload("Plan").Scopes(PaginatedQuery(page)).Find(&membershipObjectList)
 	if result.Error != nil {
 		err.FailRetrieveDataFromDB(result.Error)
 		return nil, 0

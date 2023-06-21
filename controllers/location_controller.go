@@ -18,12 +18,12 @@ func GetLocationsController(c echo.Context) error {
 	var err models.CustomError
 
 	page.PageString = c.QueryParam("page")
-	page.ConvertPageStringToINT(&err)
+	page.PageSizeString = c.QueryParam("page_size")
+	page.Paginate(&err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
-	page.CalcOffsetLimit()
 
 	if params.ParamIsSet() {
 		query := params.DecodeToQueryString()

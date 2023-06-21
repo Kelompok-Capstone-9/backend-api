@@ -20,12 +20,12 @@ func GetClassTicketsController(c echo.Context) error {
 	var err models.CustomError
 
 	params.Page.PageString = c.QueryParam("page")
-	params.Page.ConvertPageStringToINT(&err)
+	params.Page.PageSizeString = c.QueryParam("page_size")
+	params.Page.Paginate(&err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
-	params.Page.CalcOffsetLimit()
 
 	classTickets, response.DataShown = database.GetClassTickets(&params.Page, &err)
 	if err.IsError() {
@@ -308,12 +308,12 @@ func GetMyTicketsController(c echo.Context) error {
 	var err models.CustomError
 
 	page.PageString = c.QueryParam("page")
-	page.ConvertPageStringToINT(&err)
+	page.PageSizeString = c.QueryParam("page_size")
+	page.Paginate(&err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
-	page.CalcOffsetLimit()
 
 	userID := int(middlewares.ExtractTokenUserID(c))
 	query := fmt.Sprintf("user_id = %d", userID)

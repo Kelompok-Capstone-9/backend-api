@@ -1,7 +1,6 @@
 package models
 
 import (
-	"gofit-api/constants"
 	"net/http"
 )
 
@@ -36,14 +35,6 @@ type (
 	}
 )
 
-func (p *Pagination) CalculateShownData() {
-	if p.TotalData < constants.LIMIT {
-		p.DataShown = p.TotalData
-	} else {
-		p.DataShown = constants.LIMIT
-	}
-}
-
 func (rm *ResponseMetadata) ErrorOcurred(err *CustomError) {
 	rm.StatusCode = err.StatusCode
 	rm.Message = err.ErrorMessage.Error()
@@ -56,7 +47,6 @@ func (glr *GeneralListResponse) Success(message string, page, totalData int, dat
 	glr.Page = page
 	glr.TotalData = totalData
 	glr.Data = data
-	glr.CalculateShownData()
 }
 
 func (gr *GeneralResponse) Success(statusCode int, message string, data interface{}) {

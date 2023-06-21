@@ -17,7 +17,7 @@ func ClassTicketTotalData() int {
 func GetClassTickets(page *models.Pages, err *models.CustomError) ([]models.ReadableClassTicket, int) {
 	var classTicketObjectList []models.ClassTicket
 
-	result := configs.DB.Offset(page.Offset).Limit(page.Limit).Preload("User").Preload("ClassPackage.Class.Location").Find(&classTicketObjectList)
+	result := configs.DB.Scopes(PaginatedQuery(page)).Preload("User").Preload("ClassPackage.Class.Location").Find(&classTicketObjectList)
 	if result.Error != nil {
 		err.FailRetrieveDataFromDB(result.Error)
 		return nil, 0
@@ -29,7 +29,7 @@ func GetClassTickets(page *models.Pages, err *models.CustomError) ([]models.Read
 func GetClassTicketsWithParams(query string, page *models.Pages, err *models.CustomError) ([]models.ReadableClassTicket, int) {
 	var classTicketObjectList []models.ClassTicket
 
-	result := configs.DB.Where(query).Offset(page.Offset).Limit(page.Limit).Preload("User").Preload("ClassPackage.Class.Location").Find(&classTicketObjectList)
+	result := configs.DB.Where(query).Scopes(PaginatedQuery(page)).Preload("User").Preload("ClassPackage.Class.Location").Find(&classTicketObjectList)
 	if result.Error != nil {
 		err.FailRetrieveDataFromDB(result.Error)
 		return nil, 0

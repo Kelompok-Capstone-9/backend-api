@@ -17,7 +17,7 @@ func LocationTotalData() int {
 func GetLocations(page *models.Pages, err *models.CustomError) ([]models.ReadableLocation, int) {
 	var locationObjectList []models.Location
 
-	result := configs.DB.Offset(page.Offset).Limit(page.Limit).Find(&locationObjectList)
+	result := configs.DB.Scopes(PaginatedQuery(page)).Find(&locationObjectList)
 	if result.Error != nil {
 		err.FailRetrieveDataFromDB(result.Error)
 		return nil, 0
@@ -29,7 +29,7 @@ func GetLocations(page *models.Pages, err *models.CustomError) ([]models.Readabl
 func GetLocationsWithParams(query string, page *models.Pages, err *models.CustomError) ([]models.ReadableLocation, int) {
 	var locationObjectList []models.Location
 
-	result := configs.DB.Where(query).Offset(page.Offset).Limit(page.Limit).Find(&locationObjectList)
+	result := configs.DB.Where(query).Scopes(PaginatedQuery(page)).Find(&locationObjectList)
 	if result.Error != nil {
 		err.FailRetrieveDataFromDB(result.Error)
 		return nil, 0

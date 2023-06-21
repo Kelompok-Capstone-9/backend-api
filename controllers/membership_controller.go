@@ -20,13 +20,13 @@ func GetMembershipsController(c echo.Context) error {
 	var totalData int
 
 	param.Page.PageString = c.QueryParam("page")
-	param.Page.ConvertPageStringToINT(&err)
+	param.Page.PageSizeString = c.QueryParam("page_size")
+	param.Page.Paginate(&err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
-	param.Page.CalcOffsetLimit()
 	param.Name = c.QueryParam("name")
 	switch {
 	case param.Name != "":

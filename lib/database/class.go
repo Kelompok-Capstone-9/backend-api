@@ -17,7 +17,7 @@ func ClassTotalData() int {
 func GetClasses(page *models.Pages, err *models.CustomError) ([]models.ReadableClass, int) {
 	var classObjectList []models.Class
 
-	result := configs.DB.Offset(page.Offset).Limit(page.Limit).Preload("ClassPackages").Preload("Location").Find(&classObjectList)
+	result := configs.DB.Scopes(PaginatedQuery(page)).Preload("ClassPackages").Preload("Location").Find(&classObjectList)
 	if result.Error != nil {
 		err.FailRetrieveDataFromDB(result.Error)
 		return nil, 0

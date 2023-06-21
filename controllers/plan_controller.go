@@ -18,13 +18,13 @@ func GetPlansController(c echo.Context) error {
 	var totalData int
 
 	page.PageString = c.QueryParam("page")
-	page.ConvertPageStringToINT(&err)
+	page.PageSizeString = c.QueryParam("page_size")
+	page.Paginate(&err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
-	page.CalcOffsetLimit()
 	plans, response.DataShown = database.GetPlans(&page, &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
