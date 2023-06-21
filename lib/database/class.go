@@ -8,10 +8,16 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetClasses(offset, limit int, err *models.CustomError) ([]models.ReadableClass, int) {
+func ClassTotalData() int {
+	var totalData int64
+	configs.DB.Table("classes").Count(&totalData)
+	return int(totalData)
+}
+
+func GetClasses(page *models.Pages, err *models.CustomError) ([]models.ReadableClass, int) {
 	var classObjectList []models.Class
 
-	result := configs.DB.Offset(offset).Limit(limit).Preload("ClassPackages").Preload("Location").Find(&classObjectList)
+	result := configs.DB.Offset(page.Offset).Limit(page.Limit).Preload("ClassPackages").Preload("Location").Find(&classObjectList)
 	if result.Error != nil {
 		err.FailRetrieveDataFromDB(result.Error)
 		return nil, 0

@@ -8,10 +8,16 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetClassTickets(offset, limit int, err *models.CustomError) ([]models.ReadableClassTicket, int) {
+func ClassTicketTotalData() int {
+	var totalData int64
+	configs.DB.Table("class_tickets").Count(&totalData)
+	return int(totalData)
+}
+
+func GetClassTickets(page *models.Pages, err *models.CustomError) ([]models.ReadableClassTicket, int) {
 	var classTicketObjectList []models.ClassTicket
 
-	result := configs.DB.Offset(offset).Limit(limit).Preload("User").Preload("ClassPackage.Class.Location").Find(&classTicketObjectList)
+	result := configs.DB.Offset(page.Offset).Limit(page.Limit).Preload("User").Preload("ClassPackage.Class.Location").Find(&classTicketObjectList)
 	if result.Error != nil {
 		err.FailRetrieveDataFromDB(result.Error)
 		return nil, 0

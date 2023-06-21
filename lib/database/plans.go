@@ -9,10 +9,16 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetPlans(offset, limit int, err *models.CustomError) ([]models.ReadablePlan, int) {
+func PlanTotalData() int {
+	var totalData int64
+	configs.DB.Table("plans").Count(&totalData)
+	return int(totalData)
+}
+
+func GetPlans(page *models.Pages, err *models.CustomError) ([]models.ReadablePlan, int) {
 	var planObjectList []models.Plan
 
-	result := configs.DB.Offset(offset).Limit(limit).Find(&planObjectList)
+	result := configs.DB.Offset(page.Offset).Limit(page.Limit).Find(&planObjectList)
 	if result.Error != nil {
 		err.FailRetrieveDataFromDB(result.Error)
 		return nil, 0

@@ -27,11 +27,13 @@ func GetClassTicketsController(c echo.Context) error {
 	}
 	params.Page.CalcOffsetLimit()
 
-	classTickets, totalData = database.GetClassTickets(params.Page.Offset, params.Page.Limit, &err)
+	classTickets, response.DataShown = database.GetClassTickets(&params.Page, &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
+
+	totalData = database.ClassTicketTotalData()
 
 	response.Success("success get class ticket", params.Page.Page, totalData, classTickets)
 	return c.JSON(response.StatusCode, response)

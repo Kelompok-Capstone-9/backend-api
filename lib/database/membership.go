@@ -8,10 +8,16 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetMemberships(offset, limit int, err *models.CustomError) ([]models.ReadableMembership, int) {
+func MembershipTotalData() int {
+	var totalData int64
+	configs.DB.Table("memberships").Count(&totalData)
+	return int(totalData)
+}
+
+func GetMemberships(page *models.Pages, err *models.CustomError) ([]models.ReadableMembership, int) {
 	var membershipObjectList []models.Membership
 
-	result := configs.DB.Preload("User").Preload("Plan").Offset(offset).Limit(limit).Find(&membershipObjectList)
+	result := configs.DB.Preload("User").Preload("Plan").Offset(page.Offset).Limit(page.Limit).Find(&membershipObjectList)
 	if result.Error != nil {
 		err.FailRetrieveDataFromDB(result.Error)
 		return nil, 0

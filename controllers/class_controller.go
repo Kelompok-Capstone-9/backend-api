@@ -30,13 +30,13 @@ func GetClassesController(c echo.Context) error {
 	switch {
 	case params.Name != "":
 		params.NameQueryForm() // change name paramater to query form e.g: andy to %andy%
-		// classes, totalData = database.GetClassesWithParam(&params, &err)
+		// classes, response.DataShown = database.GetClassesWithParam(&params, &err)
 		if err.IsError() {
 			response.ErrorOcurred(&err)
 			return c.JSON(response.StatusCode, response)
 		}
 	default:
-		classes, totalData = database.GetClasses(params.Page.Offset, params.Page.Limit, &err)
+		classes, response.DataShown = database.GetClasses(&params.Page, &err)
 		if err.IsError() {
 			response.ErrorOcurred(&err)
 			return c.JSON(response.StatusCode, response)
@@ -49,6 +49,8 @@ func GetClassesController(c echo.Context) error {
 			classes[key].HideLink()
 		}
 	}
+
+	totalData = database.ClassTotalData()
 
 	response.Success("success get classes", params.Page.Page, totalData, classes)
 	return c.JSON(response.StatusCode, response)

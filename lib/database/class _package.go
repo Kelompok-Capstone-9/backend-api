@@ -9,10 +9,16 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetClassPackages(offset, limit int, err *models.CustomError) ([]models.ReadableClassPackage, int) {
+func ClassPackageTotalData() int {
+	var totalData int64
+	configs.DB.Table("class_packages").Count(&totalData)
+	return int(totalData)
+}
+
+func GetClassPackages(page *models.Pages, err *models.CustomError) ([]models.ReadableClassPackage, int) {
 	var classpackageObjectList []models.ClassPackage
 
-	result := configs.DB.Offset(offset).Limit(limit).Preload("Class.Location").Find(&classpackageObjectList)
+	result := configs.DB.Offset(page.Offset).Limit(page.Limit).Preload("Class.Location").Find(&classpackageObjectList)
 	if result.Error != nil {
 		err.FailRetrieveDataFromDB(result.Error)
 		return nil, 0

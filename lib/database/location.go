@@ -8,10 +8,16 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetLocations(offset, limit int, err *models.CustomError) ([]models.ReadableLocation, int) {
+func LocationTotalData() int {
+	var totalData int64
+	configs.DB.Table("locations").Count(&totalData)
+	return int(totalData)
+}
+
+func GetLocations(page *models.Pages, err *models.CustomError) ([]models.ReadableLocation, int) {
 	var locationObjectList []models.Location
 
-	result := configs.DB.Offset(offset).Limit(limit).Find(&locationObjectList)
+	result := configs.DB.Offset(page.Offset).Limit(page.Limit).Find(&locationObjectList)
 	if result.Error != nil {
 		err.FailRetrieveDataFromDB(result.Error)
 		return nil, 0

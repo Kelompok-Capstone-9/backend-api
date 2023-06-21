@@ -31,23 +31,20 @@ func GetMembershipsController(c echo.Context) error {
 	switch {
 	case param.Name != "":
 		param.NameQueryForm() // change name paramater to query form e.g: andy to %andy%
-		memberships, totalData = database.GetMembershipByUserName(param.Name, &err)
+		memberships, response.DataShown = database.GetMembershipByUserName(param.Name, &err)
 		if err.IsError() {
 			response.ErrorOcurred(&err)
 			return c.JSON(response.StatusCode, response)
 		}
 	default:
-		memberships, totalData = database.GetMemberships(param.Page.Offset, param.Page.Limit, &err)
+		memberships, response.DataShown = database.GetMemberships(&param.Page, &err)
 		if err.IsError() {
 			response.ErrorOcurred(&err)
 			return c.JSON(response.StatusCode, response)
 		}
 	}
-	// memberships, totalData := database.GetMemberships(param.Page.Offset, param.Page.Limit, &err)
-	// if err.IsError() {
-	// 	response.ErrorOcurred(&err)
-	// 	return c.JSON(response.StatusCode, response)
-	// }
+
+	totalData = database.MembershipTotalData()
 
 	response.Success("Successfully retrieved memberships", param.Page.Page, totalData, memberships)
 	return c.JSON(http.StatusOK, response)

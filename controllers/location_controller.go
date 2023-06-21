@@ -27,18 +27,20 @@ func GetLocationsController(c echo.Context) error {
 
 	if params.ParamIsSet() {
 		query := params.DecodeToQueryString()
-		locations, totalData = database.GetLocationsWithParams(query, &page, &err)
+		locations, response.Pagination.DataShown = database.GetLocationsWithParams(query, &page, &err)
 		if err.IsError() {
 			response.ErrorOcurred(&err)
 			return c.JSON(response.StatusCode, response)
 		}
 	} else {
-		locations, totalData = database.GetLocations(page.Offset, page.Limit, &err)
+		locations, response.Pagination.DataShown = database.GetLocations(&page, &err)
 		if err.IsError() {
 			response.ErrorOcurred(&err)
 			return c.JSON(response.StatusCode, response)
 		}
 	}
+
+	totalData = database.LocationTotalData()
 
 	response.Success("success get locations", page.Page, totalData, locations)
 	return c.JSON(response.StatusCode, response)
