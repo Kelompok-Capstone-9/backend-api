@@ -1,7 +1,9 @@
 package controllers
 
 import (
+	"fmt"
 	"gofit-api/lib/database"
+	"gofit-api/lib/payment"
 	"gofit-api/middlewares"
 	"gofit-api/models"
 	"net/http"
@@ -238,4 +240,124 @@ func DeleteTransactionController(c echo.Context) error {
 	}
 	response.Success(http.StatusCreated, "success delete transaction", deletedTransaction)
 	return c.JSON(http.StatusOK, response)
+}
+
+// CreateTransactionController creates a new transaction
+func PayClassTicketController(c echo.Context) error {
+	var response models.GeneralResponse
+	var err models.CustomError
+
+	var classTicketPaymentRequest models.ClassTicketPaymentRequest
+	var ccToken string
+
+	var classTicketObject models.ClassTicket
+	var classTicketIDParam models.IDParameter
+
+	classTicketIDParam.IDString = c.Param("class_ticket_id")
+	classTicketIDParam.ConvertIDStringToINT(&err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	err.ErrorMessage = c.Bind(&classTicketPaymentRequest)
+		if err.IsError() {
+			err.StatusCode = http.StatusBadRequest
+			err.ErrorReason = "Invalid request body"
+			response.ErrorOcurred(&err)
+			return c.JSON(response.StatusCode, response)
+		}
+
+	switch classTicketPaymentRequest.ReadablePaymentMethod.Name {
+	case "gopay":
+		//gopay action
+	case "credit card":
+		ccToken, err.ErrorMessage = payment.GenerateCreditCardToken(&classTicketPaymentRequest.CreditCard)
+		if err.IsError() {
+			err.StatusCode = http.StatusBadRequest
+			err.ErrorReason = "Invalid Credit Card"
+			response.ErrorOcurred(&err)
+			return c.JSON(response.StatusCode, response)
+		}
+	case "shopee pay":
+		// shoopepay action
+	}
+
+	classTicketObject.ID = uint(classTicketIDParam.ID)
+	database.GetClassTicket(&classTicketObject, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	response.Success(http.StatusCreated, "Successfully created a new transaction", ccToken)
+	return c.JSON(response.StatusCode, response)
+}
+
+func CallBackMidtrans(c echo.Context) error {
+	var err models.CustomError
+	var midtransCallback models.MidtransCallBack
+
+	err.ErrorMessage = c.Bind(&midtransCallback)
+	if err.IsError() {
+		err.StatusCode = http.StatusBadRequest
+		err.ErrorReason = "Invalid request body"
+		return echo.NewHTTPError(err.StatusCode, fmt.Sprintf("%s:%s", err.ErrorMessage, err.ErrorReason))
+	}
+
+	switch midtransCallback.TransactionStatus {
+	case "capture", "settlement":
+		transaction := database.GetTransactionByCode(midtransCallback.TransactionCode, &err)
+		if err.IsError() {
+			fmt.Println(err)
+			return echo.NewHTTPError(err.StatusCode, fmt.Sprintf("%s:%s", err.ErrorMessage, err.ErrorReason))
+		}
+
+		transaction.Status = "completed"
+		database.UpdateTransaction(&transaction, &err)
+		if err.IsError() {
+			fmt.Println(err)
+			return echo.NewHTTPError(err.StatusCode, fmt.Sprintf("%s:%s", err.ErrorMessage, err.ErrorReason))
+		}
+
+		switch transaction.Product {
+		case models.MembershipProduct:
+			err.ErrorMessage = database.ActivateMembershipByID(transaction.ProductID)
+			if err.IsError() {
+				fmt.Println(err)
+				return echo.NewHTTPError(err.StatusCode, fmt.Sprintf("%s:%s", err.ErrorMessage, err.ErrorReason))
+			}
+			fmt.Println("membership(id=", transaction.ProductID, ") activated ")
+		case models.ClassProduct:
+			err.ErrorMessage = database.ChangeClassTicketStatus(transaction.ProductID, "booked")
+			if err.IsError() {
+				fmt.Println(err)
+				return echo.NewHTTPError(err.StatusCode, fmt.Sprintf("%s:%s", err.ErrorMessage, err.ErrorReason))
+			}
+		}
+	case "cancel", "expire":
+		transaction := database.GetTransactionByCode(midtransCallback.TransactionCode, &err)
+		if err.IsError() {
+			fmt.Println(err)
+			return echo.NewHTTPError(err.StatusCode, fmt.Sprintf("%s:%s", err.ErrorMessage, err.ErrorReason))
+		}
+
+		transaction.Status = "cancel"
+		database.UpdateTransaction(&transaction, &err)
+		if err.IsError() {
+			fmt.Println(err)
+			return echo.NewHTTPError(err.StatusCode, fmt.Sprintf("%s:%s", err.ErrorMessage, err.ErrorReason))
+		}
+
+		switch transaction.Product {
+		case models.ClassProduct:
+			err.ErrorMessage = database.ChangeClassTicketStatus(transaction.ProductID, "cancelled")
+			if err.IsError() {
+				fmt.Println(err)
+				return echo.NewHTTPError(err.StatusCode, fmt.Sprintf("%s:%s", err.ErrorMessage, err.ErrorReason))
+			}
+		}
+	}
+
+	return c.HTML(200, "notification accepted")
 }

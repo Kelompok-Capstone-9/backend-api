@@ -99,3 +99,20 @@ func GenerateTrainingLevel(trainingLevelString string) (TrainingLevel, error) {
 	}
 	return "", errors.New("invalid class ticket status")
 }
+
+type ProductType string
+
+const (
+	MembershipProduct ProductType = "membership"
+	ClassProduct      ProductType = "class"
+)
+
+func GenerateProductType(productTypeString string) (ProductType, error) {
+	switch productTypeString {
+	case string(MembershipProduct):
+		return MembershipProduct, nil
+	case string(ClassProduct):
+		return ClassProduct, nil
+	}
+	return "", errors.New("invalid product type")
+}

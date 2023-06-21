@@ -29,3 +29,7 @@ func LoadConfig() *models.Config {
 
 	return &AppConfig
 }
+
+func SetMidtransConfig()  {
+	
+}

@@ -21,7 +21,7 @@ func GetTransactions(offset, limit int, err *models.CustomError) ([]models.Reada
 }
 
 func GetTransaction(transactionObject *models.Transaction, err *models.CustomError) {
-	result := configs.DB.First(transactionObject)
+	result := configs.DB.Preload("PaymentMethod").First(transactionObject)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			err.NoRecordFound(result.Error)
@@ -83,4 +83,17 @@ func DeleteTransaction(transactionObject *models.Transaction, err *models.Custom
 	if result.Error != nil {
 		err.FailDeleteDataInDB(result.Error)
 	}
+}
+
+func GetTransactionByCode(transactionCode string, err *models.CustomError) models.Transaction {
+	var transaction models.Transaction
+	result := configs.DB.Where("transaction_code = ?", transactionCode).First(&transaction)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			err.NoRecordFound(result.Error)
+		} else {
+			err.FailRetrieveDataFromDB(result.Error)
+		}
+	}
+	return transaction
 }

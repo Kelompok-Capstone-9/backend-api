@@ -13,6 +13,18 @@ import (
 
 var DB *gorm.DB
 
+var PaymentMethods = []models.PaymentMethod{
+	{
+		Name: "gopay",
+	},
+	{
+		Name: "credit card",
+	},
+	{
+		Name: "shoope pay",
+	},
+}
+
 func InitDB() error {
 	var err error
 	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local",
@@ -29,15 +41,26 @@ func InitDB() error {
 }
 
 func MigrateDB() error {
-	return DB.AutoMigrate(
+	err := DB.AutoMigrate(
 		models.User{},
 		models.Membership{},
 		models.Plan{},
-    models.Location{},
+		models.Location{},
 		models.Class{},
 		models.ClassPackage{},
 		models.ClassTicket{},
+		models.PaymentMethod{},
+		models.Transaction{},
 	)
+	if err != nil {
+		return err
+	}
+
+	for _, payment := range PaymentMethods {
+		err = DB.FirstOrCreate(&payment).Error
+	}
+
+	return err
 }
 
 func MigrateAndSeedDB() error {
