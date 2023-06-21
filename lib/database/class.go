@@ -8,12 +8,6 @@ import (
 	"gorm.io/gorm"
 )
 
-func ClassTotalData() int {
-	var totalData int64
-	configs.DB.Table("classes").Count(&totalData)
-	return int(totalData)
-}
-
 func GetClasses(page *models.Pages, err *models.CustomError) ([]models.ReadableClass, int) {
 	var classObjectList []models.Class
 

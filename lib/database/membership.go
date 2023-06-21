@@ -8,12 +8,6 @@ import (
 	"gorm.io/gorm"
 )
 
-func MembershipTotalData() int {
-	var totalData int64
-	configs.DB.Table("memberships").Count(&totalData)
-	return int(totalData)
-}
-
 func GetMemberships(page *models.Pages, err *models.CustomError) ([]models.ReadableMembership, int) {
 	var membershipObjectList []models.Membership
 

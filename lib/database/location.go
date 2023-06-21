@@ -8,12 +8,6 @@ import (
 	"gorm.io/gorm"
 )
 
-func LocationTotalData() int {
-	var totalData int64
-	configs.DB.Table("locations").Count(&totalData)
-	return int(totalData)
-}
-
 func GetLocations(page *models.Pages, err *models.CustomError) ([]models.ReadableLocation, int) {
 	var locationObjectList []models.Location
 

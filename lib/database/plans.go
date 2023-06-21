@@ -9,12 +9,6 @@ import (
 	"gorm.io/gorm"
 )
 
-func PlanTotalData() int {
-	var totalData int64
-	configs.DB.Table("plans").Count(&totalData)
-	return int(totalData)
-}
-
 func GetPlans(page *models.Pages, err *models.CustomError) ([]models.ReadablePlan, int) {
 	var planObjectList []models.Plan
 

@@ -50,7 +50,7 @@ func GetClassesController(c echo.Context) error {
 		}
 	}
 
-	totalData = database.ClassTotalData()
+	totalData = database.CountTotalData("classes")
 
 	response.Success("success get classes", params.Page.Page, totalData, classes)
 	return c.JSON(response.StatusCode, response)

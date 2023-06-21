@@ -8,12 +8,6 @@ import (
 	"gorm.io/gorm"
 )
 
-func ClassTicketTotalData() int {
-	var totalData int64
-	configs.DB.Table("class_tickets").Count(&totalData)
-	return int(totalData)
-}
-
 func GetClassTickets(page *models.Pages, err *models.CustomError) ([]models.ReadableClassTicket, int) {
 	var classTicketObjectList []models.ClassTicket
 

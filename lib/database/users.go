@@ -11,12 +11,6 @@ import (
 
 var mysqlErr *mysql.MySQLError
 
-func UserTotalData() int {
-	var totalData int64
-	configs.DB.Table("users").Count(&totalData)
-	return int(totalData)
-}
-
 func GetUsers(page *models.Pages, err *models.CustomError) ([]models.ReadableUser, int) {
 	var userObjectList []models.User
 

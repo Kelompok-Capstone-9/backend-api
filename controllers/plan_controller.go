@@ -31,7 +31,7 @@ func GetPlansController(c echo.Context) error {
 		return c.JSON(response.StatusCode, response)
 	}
 
-	totalData = database.PlanTotalData()
+	totalData = database.CountTotalData("plans")
 
 	response.Success("Successfully retrieved plans", page.Page, totalData, plans)
 	return c.JSON(http.StatusOK, response)

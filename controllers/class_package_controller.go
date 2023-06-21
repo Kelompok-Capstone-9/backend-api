@@ -57,7 +57,7 @@ func GetClassPackagesController(c echo.Context) error {
 		}
 	}
 
-	totalData = database.ClassPackageTotalData()
+	totalData = database.CountTotalData("class_packages")
 
 	response.Success("success get class packages", page.Page, totalData, classPackages)
 	return c.JSON(response.StatusCode, response)

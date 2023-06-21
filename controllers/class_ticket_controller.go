@@ -33,7 +33,7 @@ func GetClassTicketsController(c echo.Context) error {
 		return c.JSON(response.StatusCode, response)
 	}
 
-	totalData = database.ClassTicketTotalData()
+	totalData = database.CountTotalData("class_tickets")
 
 	response.Success("success get class ticket", params.Page.Page, totalData, classTickets)
 	return c.JSON(response.StatusCode, response)

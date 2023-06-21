@@ -38,7 +38,7 @@ func GetUsersController(c echo.Context) error {
 		return c.JSON(response.StatusCode, response)
 	}
 
-	totalData = database.UserTotalData()
+	totalData = database.CountTotalData("users")
 
 	response.Success("success get users", page.Page, totalData, users)
 	return c.JSON(response.StatusCode, response)

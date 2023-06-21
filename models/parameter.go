@@ -235,4 +235,5 @@ func (p *Pages) Paginate(err *CustomError) {
 	}
 
 	p.Offset = (p.Page - 1) * p.PageSize
+
 }

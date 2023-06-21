@@ -9,12 +9,6 @@ import (
 	"gorm.io/gorm"
 )
 
-func ClassPackageTotalData() int {
-	var totalData int64
-	configs.DB.Table("class_packages").Count(&totalData)
-	return int(totalData)
-}
-
 func GetClassPackages(page *models.Pages, err *models.CustomError) ([]models.ReadableClassPackage, int) {
 	var classpackageObjectList []models.ClassPackage
 

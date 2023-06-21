@@ -44,7 +44,7 @@ func GetMembershipsController(c echo.Context) error {
 		}
 	}
 
-	totalData = database.MembershipTotalData()
+	totalData = database.CountTotalData("memberships")
 
 	response.Success("Successfully retrieved memberships", param.Page.Page, totalData, memberships)
 	return c.JSON(http.StatusOK, response)

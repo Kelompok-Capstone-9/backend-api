@@ -40,7 +40,7 @@ func GetLocationsController(c echo.Context) error {
 		}
 	}
 
-	totalData = database.LocationTotalData()
+	totalData = database.CountTotalData("locations")
 
 	response.Success("success get locations", page.Page, totalData, locations)
 	return c.JSON(response.StatusCode, response)
