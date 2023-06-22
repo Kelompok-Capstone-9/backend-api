@@ -37,6 +37,7 @@ func MigrateDB() error {
 		models.Class{},
 		models.ClassPackage{},
 		models.ClassTicket{},
+		models.Healthtip{},
 	)
 }
 
