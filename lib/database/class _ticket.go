@@ -67,3 +67,8 @@ func DeleteClassTicket(classTicketObject *models.ClassTicket, err *models.Custom
 		err.FailDeleteDataInDB(result.Error)
 	}
 }
+
+func ChangeClassTicketStatus(ticketID int, status string) error {
+	err := configs.DB.Model(models.ClassTicket{}).Where("id = ?", ticketID).Update("status", status).Error
+	return err
+}

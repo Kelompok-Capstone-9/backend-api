@@ -14,7 +14,10 @@ require (
 
 require github.com/jasonlvhit/gocron v0.0.1
 
-require gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
+require (
+	github.com/midtrans/midtrans-go v1.3.6 // indirect
+	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
+)
 
 require (
 	github.com/fsnotify/fsnotify v1.6.0 // indirect

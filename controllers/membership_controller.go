@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"gofit-api/lib/database"
 	"gofit-api/middlewares"
 	"gofit-api/models"
@@ -244,8 +245,7 @@ func DeleteMembershipController(c echo.Context) error {
 }
 
 func JoinMembershipController(c echo.Context) error {
-
-	var response models.GeneralResponse
+	var response models.ProductResponse
 	var err models.CustomError
 
 	var readableMembership models.ReadableMembership
@@ -262,6 +262,10 @@ func JoinMembershipController(c echo.Context) error {
 
 	plan.ID = uint(planID.ID)
 	database.GetPlan(&plan, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
 
 	membershipObject.UserID = uint(userID)
 	membershipObject.PlanID = plan.ID
@@ -279,6 +283,22 @@ func JoinMembershipController(c echo.Context) error {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
+
+	transactionObject := models.Transaction{
+		TransactionCode: fmt.Sprintf("TM%d", membershipObject.ID),
+		Product:         models.MembershipProduct,
+		ProductID:       int(membershipObject.ID),
+		Amount:          int(membershipObject.Plan.Price),
+		Status:          string(models.Pending),
+	}
+	database.CreateTransaction(&transactionObject, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	transactionLink := fmt.Sprintf("/transactions/pay/%s", transactionObject.TransactionCode)
+	response.TransactionCreated(transactionObject.TransactionCode, "transaction created continue to payment to activate your membership", transactionLink)
 
 	membershipObject.ToReadableMembership(&readableMembership)
 

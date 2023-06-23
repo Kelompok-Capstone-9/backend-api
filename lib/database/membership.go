@@ -84,3 +84,8 @@ func DeleteMembership(membershipObject *models.Membership, err *models.CustomErr
 		err.FailDeleteDataInDB(result.Error)
 	}
 }
+
+func ActivateMembershipByID(membershipID int) error {
+	err := configs.DB.Model(models.Membership{}).Where("id = ?", membershipID).Update("is_active", true).Error
+	return err
+}
