@@ -9,10 +9,10 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetPaymentMethods(offset, limit int, err *models.CustomError) ([]models.ReadablePaymentMethod, int) {
+func GetPaymentMethods(page *models.Pages, err *models.CustomError) ([]models.ReadablePaymentMethod, int) {
 	var paymentMethodObjectList []models.PaymentMethod
 
-	result := configs.DB.Offset(offset).Limit(limit).Find(&paymentMethodObjectList)
+	result := configs.DB.Scopes(PaginatedQuery(page)).Find(&paymentMethodObjectList)
 	if result.Error != nil {
 		err.FailRetrieveDataFromDB(result.Error)
 		return nil, 0
@@ -53,6 +53,13 @@ func UpdatePaymentMethod(paymentMethodObject *models.PaymentMethod, err *models.
 
 func DeletePaymentMethod(paymentMethodObject *models.PaymentMethod, err *models.CustomError) {
 	result := configs.DB.Delete(paymentMethodObject)
+	if result.Error != nil {
+		err.FailDeleteDataInDB(result.Error)
+	}
+}
+
+func FirstOrCreatePaymentMethod(paymentMethodObject *models.PaymentMethod, err *models.CustomError) {
+	result := configs.DB.FirstOrCreate(paymentMethodObject, models.PaymentMethod{Name: paymentMethodObject.Name})
 	if result.Error != nil {
 		err.FailDeleteDataInDB(result.Error)
 	}

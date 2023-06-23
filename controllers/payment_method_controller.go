@@ -15,14 +15,14 @@ func GetPaymentMethodsController(c echo.Context) error {
 	var err models.CustomError
 
 	page.PageString = c.QueryParam("page")
-	page.ConvertPageStringToINT(&err)
+	page.PageSizeString = c.QueryParam("page_size")
+	page.Paginate(&err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
-	page.CalcOffsetLimit()
-	payment_methods, totalData := database.GetPaymentMethods(page.Offset, page.Limit, &err)
+	payment_methods, totalData := database.GetPaymentMethods(&page, &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
@@ -58,7 +58,7 @@ func GetPaymentMethodController(c echo.Context) error {
 	}
 
 	// Convert the payment method object to a readable format
-	readablePaymentMethod.ToReadablePaymentMethod(&paymentMethodObject)
+	paymentMethodObject.ToReadablePaymentMethod(&readablePaymentMethod)
 
 	response.Success(http.StatusOK, "Successfully retrieved payment", readablePaymentMethod)
 	return c.JSON(http.StatusOK, response)
@@ -69,9 +69,10 @@ func CreatePaymentMethodController(c echo.Context) error {
 	var response models.GeneralResponse
 	var err models.CustomError
 
+	var readablePaymentMethod models.ReadablePaymentMethod
 	var paymentMethodObject models.PaymentMethod
 
-	err.ErrorMessage = c.Bind(&paymentMethodObject)
+	err.ErrorMessage = c.Bind(&readablePaymentMethod)
 	if err.IsError() {
 		err.StatusCode = http.StatusBadRequest
 		err.ErrorReason = "Invalid request body"
@@ -79,13 +80,21 @@ func CreatePaymentMethodController(c echo.Context) error {
 		return c.JSON(response.StatusCode, response)
 	}
 
+	err.ErrorMessage = readablePaymentMethod.Validate()
+	if err.IsError() {
+		err.ErrorReason = "invalid field"
+		response.ErrorOcurred(&err)
+	}
+
+	readablePaymentMethod.ToPaymentMethodObject(&paymentMethodObject)
+
 	database.CreatePaymentMethod(&paymentMethodObject, &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
-	response.Success(http.StatusCreated, "Successfully created a new payment method", paymentMethodObject)
+	response.Success(http.StatusCreated, "Successfully created a new payment method", readablePaymentMethod)
 	return c.JSON(response.StatusCode, response)
 }
 
@@ -94,18 +103,21 @@ func UpdatePaymentMethodController(c echo.Context) error {
 	var response models.GeneralResponse
 	var err models.CustomError
 
-	var updatePaymentMethod models.PaymentMethod
+	var paymentMethodIDParam models.IDParameter
 
-	paymentMethodID := c.Param("id")
+	var modifiedPaymentMethod models.ReadablePaymentMethod
+	var readablePaymentMethod models.ReadablePaymentMethod
+	var paymentMethodObject models.PaymentMethod
 
-	var existingPaymentMethod models.PaymentMethod
-	existingPaymentMethod.InsertID(paymentMethodID, &err)
+	paymentMethodIDParam.IDString = c.Param("id")
+	paymentMethodIDParam.ConvertIDStringToINT(&err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
+	paymentMethodObject.ID = uint(paymentMethodIDParam.ID)
 
-	err.ErrorMessage = c.Bind(&updatePaymentMethod)
+	err.ErrorMessage = c.Bind(&modifiedPaymentMethod)
 	if err.IsError() {
 		err.StatusCode = http.StatusBadRequest
 		err.ErrorReason = "Invalid request body"
@@ -113,23 +125,29 @@ func UpdatePaymentMethodController(c echo.Context) error {
 		return c.JSON(response.StatusCode, response)
 	}
 
-	database.GetPaymentMethod(&existingPaymentMethod, &err)
+	err.ErrorMessage = modifiedPaymentMethod.Validate()
+	if err.IsError() {
+		err.ErrorReason = "invalid field"
+		response.ErrorOcurred(&err)
+	}
+
+	database.GetPaymentMethod(&paymentMethodObject, &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
-	if updatePaymentMethod.Name != "" {
-		existingPaymentMethod.Name = updatePaymentMethod.Name
-	}
+	paymentMethodObject.Name = modifiedPaymentMethod.Name
 
-	database.UpdatePaymentMethod(&existingPaymentMethod, &err)
+	database.UpdatePaymentMethod(&paymentMethodObject, &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
-	response.Success(http.StatusOK, "Successfully updated payment method", existingPaymentMethod)
+	paymentMethodObject.ToReadablePaymentMethod(&readablePaymentMethod)
+
+	response.Success(http.StatusOK, "Successfully updated payment method", readablePaymentMethod)
 	return c.JSON(response.StatusCode, response)
 }
 

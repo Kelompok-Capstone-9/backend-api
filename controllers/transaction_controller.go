@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"fmt"
 	"gofit-api/lib/database"
 	"gofit-api/lib/payment"
@@ -8,8 +9,11 @@ import (
 	"gofit-api/models"
 	"net/http"
 	"reflect"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
+	"github.com/midtrans/midtrans-go"
+	"github.com/midtrans/midtrans-go/coreapi"
 )
 
 // GetTransactionsController retrieves all transactions
@@ -21,29 +25,31 @@ func GetTransactionsController(c echo.Context) error {
 	var totalData int
 
 	param.Page.PageString = c.QueryParam("page")
-	param.Page.ConvertPageStringToINT(&err)
+	param.Page.PageSizeString = c.QueryParam("page_size")
+	param.Page.Paginate(&err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
-	param.Page.CalcOffsetLimit()
 	param.Name = c.QueryParam("name")
 	switch {
 	case param.Name != "":
 		param.NameQueryForm() // change name paramater to query form e.g: andy to %andy%
-		transactions, totalData = database.GetTransactionByUserName(param.Name, &err)
+		transactions, response.DataShown = database.GetTransactionByUserName(param.Name, &err)
 		if err.IsError() {
 			response.ErrorOcurred(&err)
 			return c.JSON(response.StatusCode, response)
 		}
 	default:
-		transactions, totalData = database.GetTransactions(param.Page.Offset, param.Page.Limit, &err)
+		transactions, response.DataShown = database.GetTransactions(&param.Page, &err)
 		if err.IsError() {
 			response.ErrorOcurred(&err)
 			return c.JSON(response.StatusCode, response)
 		}
 	}
+
+	totalData = database.CountTotalData("transactions")
 
 	response.Success("Successfully retrieved transactions", param.Page.Page, totalData, transactions)
 	return c.JSON(http.StatusOK, response)
@@ -243,54 +249,208 @@ func DeleteTransactionController(c echo.Context) error {
 }
 
 // CreateTransactionController creates a new transaction
-func PayClassTicketController(c echo.Context) error {
+func PayController(c echo.Context) error {
 	var response models.GeneralResponse
 	var err models.CustomError
 
-	var classTicketPaymentRequest models.ClassTicketPaymentRequest
-	var ccToken string
-
 	var classTicketObject models.ClassTicket
-	var classTicketIDParam models.IDParameter
+	var membershipObject models.Membership
+	var paymentMethodObject models.PaymentMethod
 
-	classTicketIDParam.IDString = c.Param("class_ticket_id")
-	classTicketIDParam.ConvertIDStringToINT(&err)
+	var paymentRequest models.PaymentRequest
+	var chargeRequest models.ChargeAPIRequest
+	var paymentResult coreapi.ChargeResponse
+
+	transaction := database.GetTransactionByCode(c.Param("transaction_code"), &err)
 	if err.IsError() {
+		err.ErrorReason = "this transaction doesn't exist"
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+	chargeRequest.TransactionDetail.OrderID = transaction.TransactionCode
+
+	err.ErrorMessage = c.Bind(&paymentRequest)
+	if err.IsError() {
+		err.StatusCode = http.StatusBadRequest
+		err.ErrorReason = "Invalid request body"
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
-	err.ErrorMessage = c.Bind(&classTicketPaymentRequest)
+	err.ErrorMessage = paymentRequest.Validate()
+	if err.IsError() {
+		err.StatusCode = http.StatusBadRequest
+		err.ErrorReason = "invalid request field"
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	switch transaction.Product {
+	case models.ClassProduct:
+		classTicketObject.ID = uint(transaction.ProductID)
+		database.GetClassTicket(&classTicketObject, &err)
 		if err.IsError() {
-			err.StatusCode = http.StatusBadRequest
-			err.ErrorReason = "Invalid request body"
+			err.ErrorReason = "class ticket doesn't exist"
+			return c.JSON(response.StatusCode, response)
+		}
+		item := models.ItemDetail{
+			ID:       strconv.Itoa(int(classTicketObject.ID)),
+			Price:    int64(classTicketObject.ClassPackage.Price),
+			Quantity: 1,
+			Name:     fmt.Sprintf("%s - %s", classTicketObject.ClassPackage.Class.Name, classTicketObject.ClassPackage.Period),
+		}
+		chargeRequest.ItemDetails = append(chargeRequest.ItemDetails, item)
+
+		chargeRequest.TransactionDetail.GrossAmount = int64(classTicketObject.ClassPackage.Price)
+		chargeRequest.CustomerDetails.FirstName = classTicketObject.User.Name
+		chargeRequest.CustomerDetails.Email = classTicketObject.User.Email
+	case models.MembershipProduct:
+		membershipObject.ID = uint(transaction.ProductID)
+		database.GetMembership(&membershipObject, &err)
+		if err.IsError() {
+			err.ErrorReason = "membership doesn't exist"
+			return c.JSON(response.StatusCode, response)
+		}
+		item := models.ItemDetail{
+			ID:       strconv.Itoa(int(membershipObject.ID)),
+			Price:    int64(membershipObject.Plan.Price),
+			Quantity: 1,
+			Name:     fmt.Sprintf("%s - %d Days", membershipObject.Plan.Name, membershipObject.Plan.Duration),
+		}
+		chargeRequest.ItemDetails = append(chargeRequest.ItemDetails, item)
+
+		chargeRequest.TransactionDetail.GrossAmount = int64(membershipObject.Plan.Price)
+		chargeRequest.CustomerDetails.FirstName = membershipObject.User.Name
+		chargeRequest.CustomerDetails.Email = membershipObject.User.Email
+	}
+
+	switch paymentRequest.ReadablePaymentMethod.Name {
+	case "gopay":
+		paymentMethodObject.Name = "gopay"
+		database.FirstOrCreatePaymentMethod(&paymentMethodObject, &err)
+		if err.IsError() {
 			response.ErrorOcurred(&err)
 			return c.JSON(response.StatusCode, response)
 		}
-
-	switch classTicketPaymentRequest.ReadablePaymentMethod.Name {
-	case "gopay":
-		//gopay action
-	case "credit card":
-		ccToken, err.ErrorMessage = payment.GenerateCreditCardToken(&classTicketPaymentRequest.CreditCard)
+		var paymentMethodID *int = new(int)
+		*paymentMethodID = int(paymentMethodObject.ID)
+		transaction.PaymentMethodID = paymentMethodID
+		transaction.PaymentMethod = paymentMethodObject
+		chargeRequest.PaymentType = "gopay"
+		err.StatusCode = http.StatusBadRequest
+		err.ErrorMessage = errors.New("invalid payment method")
+		err.ErrorReason = "sorry this payment method is not available yet."
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	case "credit_card":
+		paymentMethodObject.Name = "gopay"
+		database.FirstOrCreatePaymentMethod(&paymentMethodObject, &err)
+		if err.IsError() {
+			response.ErrorOcurred(&err)
+			return c.JSON(response.StatusCode, response)
+		}
+		var paymentMethodID *int = new(int)
+		*paymentMethodID = int(paymentMethodObject.ID)
+		transaction.PaymentMethodID = paymentMethodID
+		transaction.PaymentMethod = paymentMethodObject
+		chargeRequest.PaymentType = "credit_card"
+		chargeRequest.CreditCardToken, err.ErrorMessage = payment.GenerateCreditCardToken(&paymentRequest.CreditCard)
 		if err.IsError() {
 			err.StatusCode = http.StatusBadRequest
 			err.ErrorReason = "Invalid Credit Card"
 			response.ErrorOcurred(&err)
 			return c.JSON(response.StatusCode, response)
 		}
-	case "shopee pay":
-		// shoopepay action
-	}
-
-	classTicketObject.ID = uint(classTicketIDParam.ID)
-	database.GetClassTicket(&classTicketObject, &err)
-	if err.IsError() {
+		var paymentError *midtrans.Error
+		paymentResult, paymentError = payment.PayWithCreditCard(chargeRequest)
+		if paymentError != nil {
+			err.StatusCode = paymentError.StatusCode
+			err.ErrorMessage = paymentError.RawError
+			err.ErrorReason = paymentError.GetMessage()
+			response.ErrorOcurred(&err)
+			return c.JSON(response.StatusCode, response)
+		}
+	case "shopee_pay":
+		paymentMethodObject.Name = "shoope_pay"
+		database.FirstOrCreatePaymentMethod(&paymentMethodObject, &err)
+		if err.IsError() {
+			response.ErrorOcurred(&err)
+			return c.JSON(response.StatusCode, response)
+		}
+		var paymentMethodID *int = new(int)
+		*paymentMethodID = int(paymentMethodObject.ID)
+		transaction.PaymentMethodID = paymentMethodID
+		transaction.PaymentMethod = paymentMethodObject
+		chargeRequest.PaymentType = "shoope_pay"
+		err.StatusCode = http.StatusBadRequest
+		err.ErrorMessage = errors.New("invalid payment method")
+		err.ErrorReason = "sorry this payment method is not available yet."
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
-	response.Success(http.StatusCreated, "Successfully created a new transaction", ccToken)
+	switch paymentResult.TransactionStatus {
+	case "capture", "settlement":
+		// update transaction status to completed in database
+		transaction.Status = "completed"
+		database.UpdateTransaction(&transaction, &err)
+		if err.IsError() {
+			err.ErrorReason = "fail to update transaction status"
+			response.ErrorOcurred(&err)
+			return c.JSON(response.StatusCode, response)
+		}
+
+		// update class / membership status in database
+		switch transaction.Product {
+		case models.ClassProduct:
+			classTicketObject.Status = models.Booked
+			database.UpdateClassTicket(&classTicketObject, &err)
+			if err.IsError() {
+				err.ErrorReason = "fail to update class ticket status"
+				response.ErrorOcurred(&err)
+				return c.JSON(response.StatusCode, response)
+			}
+		case models.MembershipProduct:
+			membershipObject.IsActive = true
+			database.UpdateMembership(&membershipObject, &err)
+			if err.IsError() {
+				err.ErrorReason = "fail to update membership status"
+				response.ErrorOcurred(&err)
+				return c.JSON(response.StatusCode, response)
+			}
+		}
+	case "deny", "cancel", "expire":
+		// update transaction status to cancel in database
+		transaction.Status = "cancel"
+		database.UpdateTransaction(&transaction, &err)
+		if err.IsError() {
+			err.ErrorReason = "fail to update transaction status"
+			response.ErrorOcurred(&err)
+			return c.JSON(response.StatusCode, response)
+		}
+
+		// update class / membership status in database
+		switch transaction.Product {
+		case models.ClassProduct:
+			classTicketObject.Status = models.Cancelled
+			database.UpdateClassTicket(&classTicketObject, &err)
+			if err.IsError() {
+				err.ErrorReason = "fail to update class ticket status"
+				response.ErrorOcurred(&err)
+				return c.JSON(response.StatusCode, response)
+			}
+		}
+
+		response.StatusCode, _ = strconv.Atoi(paymentResult.StatusCode)
+		response.Message = paymentResult.StatusMessage
+		response.ErrorReason = "transaction failed try again later"
+		return c.JSON(response.StatusCode, response)
+	}
+
+	var readableTransaction models.ReadableTransaction
+	transaction.ToReadableTransaction(&readableTransaction)
+
+	response.Success(http.StatusOK, paymentResult.StatusMessage, readableTransaction)
 	return c.JSON(response.StatusCode, response)
 }
 

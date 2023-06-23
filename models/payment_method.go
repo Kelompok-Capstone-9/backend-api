@@ -1,7 +1,7 @@
 package models
 
 import (
-	"gofit-api/constants"
+	"errors"
 	"strconv"
 )
 
@@ -11,13 +11,6 @@ type PaymentMethod struct {
 	Name         string
 	Transactions []Transaction `gorm:"constraint:OnUpdate:CASCADE"`
 	Metadata     `gorm:"embedded"`
-}
-
-// ReadablePaymentMethod represents readable payment method data
-type ReadablePaymentMethod struct {
-	ID               int    `json:"id"`
-	Name             string `json:"name"`
-	ReadableMetadata `json:"metadata"`
 }
 
 func (u *PaymentMethod) InsertID(itemIDString string, err *CustomError) {
@@ -30,20 +23,31 @@ func (u *PaymentMethod) InsertID(itemIDString string, err *CustomError) {
 	u.ID = uint(itemID)
 }
 
-// Convert ID string to int
-func (rpm *ReadablePaymentMethod) InsertID(itemIDString string, err *CustomError) {
-	rpm.ID, err.ErrorMessage = strconv.Atoi(itemIDString)
-	if err.IsError() {
-		err.StatusCode = 400
-		err.ErrorReason = "invalid id parameter: " + itemIDString
-	}
+func (pm *PaymentMethod) ToReadablePaymentMethod(readablePaymentMethod *ReadablePaymentMethod) {
+	readableMetadata := pm.ToReadableMetadata()
+	readablePaymentMethod.ID = int(pm.ID)
+	readablePaymentMethod.Name = pm.Name
+	readablePaymentMethod.ReadableMetadata = *readableMetadata
+
 }
 
-func (rpm *ReadablePaymentMethod) ToReadablePaymentMethod(paymentMethodObject *PaymentMethod) {
-	rpm.ID = int(paymentMethodObject.ID)
-	rpm.Name = paymentMethodObject.Name
-	rpm.ReadableMetadata.CreatedAt = paymentMethodObject.Metadata.CreatedAt.Format(constants.DATETIME_FORMAT)
-	rpm.ReadableMetadata.UpdatedAt = paymentMethodObject.Metadata.UpdatedAt.Format(constants.DATETIME_FORMAT)
+// ReadablePaymentMethod represents readable payment method data
+type ReadablePaymentMethod struct {
+	ID               int    `json:"id"`
+	Name             string `json:"name"`
+	ReadableMetadata `json:"metadata"`
+}
+
+func (rpm *ReadablePaymentMethod) Validate() error {
+	if rpm.Name == "" {
+		return errors.New("name field is blank")
+	}
+	return nil
+}
+
+func (rpm *ReadablePaymentMethod) ToPaymentMethodObject(paymentObject *PaymentMethod) {
+	paymentObject.ID = uint(rpm.ID)
+	paymentObject.Name = rpm.Name
 }
 
 // ToReadablePaymentMethodList converts a list of PaymentMethod models to a list of ReadablePaymentMethod models

@@ -10,10 +10,11 @@ import (
 
 func AddTransactionRoutes(e *echo.Echo) {
 
+	e.POST("/transactions/pay/:transaction_code", controllers.PayController)
 	// transactionJWT := e.Group("/transaction")
 	// transactionJWT.Use(echojwt.WithConfig(jwtConfig))
 
-	adminTransactionJWT := e.Group("/admin/transaction")
+	adminTransactionJWT := e.Group("/admin/transactions")
 	adminTransactionJWT.Use(echojwt.WithConfig(jwtConfig), m.IsAdmin)
 	adminTransactionJWT.GET("", controllers.GetTransactionsController)
 	adminTransactionJWT.GET("/:id", controllers.GetTransactionController)

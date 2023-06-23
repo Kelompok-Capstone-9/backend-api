@@ -8,10 +8,10 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetTransactions(offset, limit int, err *models.CustomError) ([]models.ReadableTransaction, int) {
+func GetTransactions(page *models.Pages, err *models.CustomError) ([]models.ReadableTransaction, int) {
 	var transactionObjectList []models.Transaction
 
-	result := configs.DB.Offset(offset).Limit(limit).Find(&transactionObjectList)
+	result := configs.DB.Scopes(PaginatedQuery(page)).Preload("PaymentMethod").Find(&transactionObjectList)
 	if result.Error != nil {
 		err.FailRetrieveDataFromDB(result.Error)
 		return nil, 0
@@ -32,7 +32,7 @@ func GetTransaction(transactionObject *models.Transaction, err *models.CustomErr
 }
 
 func GetTransactionByUserID(userID uint, transactionObject *models.Transaction, err *models.CustomError) {
-	result := configs.DB.First(transactionObject)
+	result := configs.DB.Preload("PaymentMethod").First(transactionObject)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			err.NoRecordFound(result.Error)
@@ -45,7 +45,7 @@ func GetTransactionByUserID(userID uint, transactionObject *models.Transaction, 
 
 func GetTransactionByUserName(nameUser string, err *models.CustomError) ([]models.ReadableTransaction, int) {
 	usersID := []int{}
-	configs.DB.Model(&models.User{}).Select("id").Where("name LIKE ?", nameUser).Find(&usersID)
+	configs.DB.Model(&models.User{}).Select("id").Where("name LIKE ?", nameUser).Preload("PaymentMethod").Find(&usersID)
 
 	var transactionObjectList []models.Transaction
 	result := configs.DB.Find(&transactionObjectList)

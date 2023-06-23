@@ -10,11 +10,11 @@ import (
 
 func AddPaymentMethodRoutes(e *echo.Echo) {
 	// for users or guests
-	e.GET("/payment_method/all", controllers.GetPaymentMethodsController)
-	e.GET("/payment_method/:id", controllers.GetPaymentMethodController)
+	e.GET("/transactions/payment_methods", controllers.GetPaymentMethodsController)
+	e.GET("/transactions/payment_methods/:id", controllers.GetPaymentMethodController)
 
 	// for admin
-	paymentMethodJWT := e.Group("/admin/payment_method")
+	paymentMethodJWT := e.Group("/admin/transactions/payment_methods")
 	paymentMethodJWT.Use(echojwt.WithConfig(jwtConfig), m.IsAdmin)
 	paymentMethodJWT.POST("", controllers.CreatePaymentMethodController)
 	paymentMethodJWT.PUT("/:id", controllers.UpdatePaymentMethodController)

@@ -2,9 +2,7 @@ package models
 
 import (
 	"fmt"
-	"gofit-api/constants"
 	"strconv"
-	"time"
 )
 
 // Transaction represents the transaction object in the database
@@ -14,11 +12,9 @@ type Transaction struct {
 	ProductID       int           `gorm:"column:product_id"`
 	Amount          int           `gorm:"column:amount"`
 	TransactionCode string        `gorm:"column:transaction_code"`
-	PaymentMethodID int           `gorm:"column:payment_method_id"`
+	PaymentMethodID *int          `gorm:"column:payment_method_id"`
 	PaymentMethod   PaymentMethod `gorm:"constraint:OnUpdate:CASCADE"`
 	Status          string        `gorm:"type:enum('completed','pending', 'cancel');default:pending"`
-	CreatedAt       time.Time     `gorm:"column:created_at"`
-	UpdatedAt       time.Time     `gorm:"column:updated_at"`
 	Metadata        `gorm:"embedded"`
 }
 
@@ -44,15 +40,19 @@ func (t *Transaction) GenerateTransactionCode() {
 
 // ToReadableTransaction converts the transaction object to readable format
 func (t *Transaction) ToReadableTransaction(readableTransaction *ReadableTransaction) {
-	readableTransactionMetadata := t.ToReadableMetadata()
-	// readablePaymentMethodMetadata := t.PaymentMethod.ToReadableMetadata()
+	readableTransactionMetadata := t.Metadata.ToReadableMetadata()
+
+	var readablePaymentMethod ReadablePaymentMethod
+	t.PaymentMethod.ToReadablePaymentMethod(&readablePaymentMethod)
+
 	readableTransaction.ID = int(t.ID)
 	readableTransaction.Product = string(t.Product)
 	readableTransaction.ProductID = t.ProductID
 	readableTransaction.Amount = t.Amount
 	readableTransaction.TransactionCode = t.TransactionCode
 	readableTransaction.Status = t.Status
-	readableTransaction.PaymentMethod.ReadableMetadata = *readableTransactionMetadata
+	readableTransaction.PaymentMethod = readablePaymentMethod
+	readableTransaction.ReadableMetadata = *readableTransactionMetadata
 }
 
 // ReadableTransaction represents the readable transaction data
@@ -61,11 +61,9 @@ type ReadableTransaction struct {
 	Product          string                `json:"product"`
 	ProductID        int                   `json:"product_id"`
 	Amount           int                   `json:"amount"`
-	TransactionCode  string                `json:"invoice_id"`
+	TransactionCode  string                `json:"transaction_code"`
 	PaymentMethod    ReadablePaymentMethod `json:"payment_method"`
 	Status           string                `json:"status"`
-	CreatedAt        string                `json:"created_at"`
-	UpdatedAt        string                `json:"updated_at"`
 	ReadableMetadata `json:"metadata"`
 }
 
@@ -86,14 +84,21 @@ func (rt *ReadableTransaction) ToTransactionObject(transactionObject *Transactio
 		err.NewError(400, err.ErrorMessage, "invalid product type")
 	}
 
+	var paymentMethodObject PaymentMethod
+	rt.PaymentMethod.ToPaymentMethodObject(&paymentMethodObject)
+	var paymentMethodID *int = new(int)
+	*paymentMethodID = int(paymentMethodObject.ID)
+
 	transactionObject.ID = uint(rt.ID)
 	transactionObject.Product = transactionProductType
 	transactionObject.ProductID = rt.ProductID
 	transactionObject.Amount = rt.Amount
 	transactionObject.TransactionCode = rt.TransactionCode
+	transactionObject.PaymentMethodID = paymentMethodID
+	transactionObject.PaymentMethod = paymentMethodObject
 	transactionObject.Status = rt.Status
-	transactionObject.CreatedAt, _ = time.Parse(constants.DATETIME_FORMAT, rt.CreatedAt)
-	transactionObject.UpdatedAt, _ = time.Parse(constants.DATETIME_FORMAT, rt.UpdatedAt)
+	// transactionObject.CreatedAt, _ = time.Parse(constants.DATETIME_FORMAT, rt.CreatedAt)
+	// transactionObject.UpdatedAt, _ = time.Parse(constants.DATETIME_FORMAT, rt.UpdatedAt)
 }
 
 // ToReadableTransactionList converts a list of transaction models to a list of readable transaction models
