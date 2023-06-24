@@ -51,6 +51,7 @@ func MigrateDB() error {
 		models.ClassTicket{},
 		models.PaymentMethod{},
 		models.Transaction{},
+    models.Healthtip{},
 	)
 	if err != nil {
 		return err
