@@ -16,5 +16,5 @@ func AddHealthtipRoutes(e *echo.Echo) {
 	healthtipJWT.POST("", controllers.CreateHealthtipController)
 	healthtipJWT.PUT("/:id", controllers.EditHealthtipController)
 	healthtipJWT.DELETE("/:id", controllers.DeleteHealthtipController)
-
+	healthtipJWT.POST("/image/:id", controllers.UploadHealthtipImageController)
 }

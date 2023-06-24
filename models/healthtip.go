@@ -43,8 +43,6 @@ func (rht *ReadableHealthtip) Validate() error {
 		return errors.New("invalid title")
 	case rht.Content == "":
 		return errors.New("invalid content")
-	case rht.Image == "":
-		return errors.New("invalid image")
 	case rht.PublishDate == "":
 		return errors.New("invalid publish date")
 	}

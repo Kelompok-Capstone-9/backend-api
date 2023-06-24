@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"gofit-api/lib/database"
 	"gofit-api/models"
 	"net/http"
@@ -233,4 +234,76 @@ func DeleteHealthtipController(c echo.Context) error {
 	}
 	response.Success(http.StatusOK, "success delete healthtip", deletedHealthtip)
 	return c.JSON(http.StatusOK, response)
+}
+
+func UploadHealthtipImageController(c echo.Context) error {
+	var healthtipObject models.Healthtip
+	var imageFile models.UploadImage
+	var err models.CustomError
+
+	var idParam models.IDParameter
+	var response models.GeneralResponse
+
+	// get user info
+	idParam.IDString = c.Param("id")
+	idParam.ConvertIDStringToINT(&err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	healthtipObject.ID = uint(idParam.ID)
+	database.GetHealthtip(&healthtipObject, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	// image file
+	imageFile.Name = fmt.Sprintf("healthtip%d", healthtipObject.ID)
+	imageFile.Image, err.ErrorMessage = c.FormFile("file")
+	if err.IsError() {
+		err.NewError(http.StatusBadRequest, err.ErrorMessage, "invalid uploaded file")
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	err.ErrorMessage = imageFile.Validate()
+	if err.IsError() {
+		err.NewError(http.StatusBadRequest, err.ErrorMessage, "invalid uploaded file")
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	err.ErrorMessage = imageFile.VerifyImageExtension()
+	if err.IsError() {
+		err.NewError(http.StatusBadRequest, err.ErrorMessage, "invalid uploaded file")
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	var imagePath string
+	imagePath, err.ErrorMessage = imageFile.CopyIMGToAssets()
+	if err.IsError() {
+		err.NewError(http.StatusInternalServerError, err.ErrorMessage, "something went wrong when upload file")
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	healthtipObject.Image = imagePath
+	database.UpdateHealthtip(&healthtipObject, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	var readableHealthtip models.ReadableHealthtip
+	healthtipObject.ToReadableHealthtip(&readableHealthtip)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	response.Success(http.StatusOK, "success upload healthtip image", readableHealthtip)
+	return c.JSON(response.StatusCode, response)
 }
