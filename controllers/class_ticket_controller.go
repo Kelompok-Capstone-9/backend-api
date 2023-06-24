@@ -20,18 +20,20 @@ func GetClassTicketsController(c echo.Context) error {
 	var err models.CustomError
 
 	params.Page.PageString = c.QueryParam("page")
-	params.Page.ConvertPageStringToINT(&err)
+	params.Page.PageSizeString = c.QueryParam("page_size")
+	params.Page.Paginate(&err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
-	params.Page.CalcOffsetLimit()
 
-	classTickets, totalData = database.GetClassTickets(params.Page.Offset, params.Page.Limit, &err)
+	classTickets, response.DataShown = database.GetClassTickets(&params.Page, &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
+
+	totalData = database.CountTotalData("class_tickets")
 
 	response.Success("success get class ticket", params.Page.Page, totalData, classTickets)
 	return c.JSON(response.StatusCode, response)
@@ -251,7 +253,7 @@ func DeleteClassTicketController(c echo.Context) error {
 
 // create new class ticket for users
 func CreateMyTicketController(c echo.Context) error {
-	var response models.GeneralResponse
+	var response models.ProductResponse
 	var err models.CustomError
 
 	var readableClassTicket models.ReadableClassTicket
@@ -290,6 +292,22 @@ func CreateMyTicketController(c echo.Context) error {
 		return c.JSON(response.StatusCode, response)
 	}
 
+	transactionObject := models.Transaction{
+		TransactionCode: fmt.Sprintf("TK%d", classTicketObject.ID),
+		Product:         models.ClassProduct,
+		ProductID:       int(classTicketObject.ID),
+		Amount: int(classTicketObject.ClassPackage.Price),
+		Status: string(models.Pending),
+	}
+	database.CreateTransaction(&transactionObject, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	transactionLink := fmt.Sprintf("/transactions/pay/%s", transactionObject.TransactionCode)
+	response.TransactionCreated(transactionObject.TransactionCode, "transaction created continue to payment to book your class", transactionLink)
+
 	classTicketObject.ToReadableClassTicket(&readableClassTicket)
 	readableClassTicket.User.HidePassword()
 	readableClassTicket.ClassPackage.Class.HideLink()
@@ -306,12 +324,12 @@ func GetMyTicketsController(c echo.Context) error {
 	var err models.CustomError
 
 	page.PageString = c.QueryParam("page")
-	page.ConvertPageStringToINT(&err)
+	page.PageSizeString = c.QueryParam("page_size")
+	page.Paginate(&err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
-	page.CalcOffsetLimit()
 
 	userID := int(middlewares.ExtractTokenUserID(c))
 	query := fmt.Sprintf("user_id = %d", userID)
@@ -320,6 +338,12 @@ func GetMyTicketsController(c echo.Context) error {
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
+	}
+
+	for idx := range classTickets{
+		if classTickets[idx].Status != "booked" {
+			classTickets[idx].ClassPackage.Class.HideLink()
+		}
 	}
 
 	response.Success("success get my class tickets", page.Page, totalData, classTickets)
@@ -364,6 +388,9 @@ func GetMyTicketDetailController(c echo.Context) error {
 	}
 
 	readableClassTicket.User.HidePassword()
+	if readableClassTicket.Status != "booked" {
+		readableClassTicket.ClassPackage.Class.HideLink()
+	}
 
 	response.Success(http.StatusOK, "success get my class ticket detail", readableClassTicket)
 	return c.JSON(response.StatusCode, response)

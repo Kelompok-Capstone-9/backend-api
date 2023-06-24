@@ -19,24 +19,24 @@ func GetClassesController(c echo.Context) error {
 	var err models.CustomError
 
 	params.Page.PageString = c.QueryParam("page")
-	params.Page.ConvertPageStringToINT(&err)
+	params.Page.PageSizeString = c.QueryParam("page_size")
+	params.Page.Paginate(&err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
-	params.Page.CalcOffsetLimit()
 
 	params.Name = c.QueryParam("name")
 	switch {
 	case params.Name != "":
 		params.NameQueryForm() // change name paramater to query form e.g: andy to %andy%
-		// classes, totalData = database.GetClassesWithParam(&params, &err)
+		// classes, response.DataShown = database.GetClassesWithParam(&params, &err)
 		if err.IsError() {
 			response.ErrorOcurred(&err)
 			return c.JSON(response.StatusCode, response)
 		}
 	default:
-		classes, totalData = database.GetClasses(params.Page.Offset, params.Page.Limit, &err)
+		classes, response.DataShown = database.GetClasses(&params.Page, &err)
 		if err.IsError() {
 			response.ErrorOcurred(&err)
 			return c.JSON(response.StatusCode, response)
@@ -49,6 +49,8 @@ func GetClassesController(c echo.Context) error {
 			classes[key].HideLink()
 		}
 	}
+
+	totalData = database.CountTotalData("classes")
 
 	response.Success("success get classes", params.Page.Page, totalData, classes)
 	return c.JSON(response.StatusCode, response)

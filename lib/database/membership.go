@@ -8,10 +8,10 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetMemberships(offset, limit int, err *models.CustomError) ([]models.ReadableMembership, int) {
+func GetMemberships(page *models.Pages, err *models.CustomError) ([]models.ReadableMembership, int) {
 	var membershipObjectList []models.Membership
 
-	result := configs.DB.Preload("User").Preload("Plan").Offset(offset).Limit(limit).Find(&membershipObjectList)
+	result := configs.DB.Preload("User").Preload("Plan").Scopes(PaginatedQuery(page)).Find(&membershipObjectList)
 	if result.Error != nil {
 		err.FailRetrieveDataFromDB(result.Error)
 		return nil, 0
@@ -83,4 +83,9 @@ func DeleteMembership(membershipObject *models.Membership, err *models.CustomErr
 	if result.Error != nil {
 		err.FailDeleteDataInDB(result.Error)
 	}
+}
+
+func ActivateMembershipByID(membershipID int) error {
+	err := configs.DB.Model(models.Membership{}).Where("id = ?", membershipID).Update("is_active", true).Error
+	return err
 }

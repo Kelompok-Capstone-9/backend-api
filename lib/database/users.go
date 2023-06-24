@@ -11,10 +11,10 @@ import (
 
 var mysqlErr *mysql.MySQLError
 
-func GetUsers(offset, limit int, err *models.CustomError) ([]models.ReadableUser, int) {
+func GetUsers(page *models.Pages, err *models.CustomError) ([]models.ReadableUser, int) {
 	var userObjectList []models.User
 
-	result := configs.DB.Offset(offset).Limit(limit).Find(&userObjectList)
+	result := configs.DB.Scopes(PaginatedQuery(page)).Find(&userObjectList)
 	if result.Error != nil {
 		err.FailRetrieveDataFromDB(result.Error)
 		return nil, 0

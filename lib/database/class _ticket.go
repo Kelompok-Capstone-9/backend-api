@@ -8,10 +8,10 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetClassTickets(offset, limit int, err *models.CustomError) ([]models.ReadableClassTicket, int) {
+func GetClassTickets(page *models.Pages, err *models.CustomError) ([]models.ReadableClassTicket, int) {
 	var classTicketObjectList []models.ClassTicket
 
-	result := configs.DB.Offset(offset).Limit(limit).Preload("User").Preload("ClassPackage.Class.Location").Find(&classTicketObjectList)
+	result := configs.DB.Scopes(PaginatedQuery(page)).Preload("User").Preload("ClassPackage.Class.Location").Find(&classTicketObjectList)
 	if result.Error != nil {
 		err.FailRetrieveDataFromDB(result.Error)
 		return nil, 0
@@ -23,7 +23,7 @@ func GetClassTickets(offset, limit int, err *models.CustomError) ([]models.Reada
 func GetClassTicketsWithParams(query string, page *models.Pages, err *models.CustomError) ([]models.ReadableClassTicket, int) {
 	var classTicketObjectList []models.ClassTicket
 
-	result := configs.DB.Where(query).Offset(page.Offset).Limit(page.Limit).Preload("User").Preload("ClassPackage.Class.Location").Find(&classTicketObjectList)
+	result := configs.DB.Where(query).Scopes(PaginatedQuery(page)).Preload("User").Preload("ClassPackage.Class.Location").Find(&classTicketObjectList)
 	if result.Error != nil {
 		err.FailRetrieveDataFromDB(result.Error)
 		return nil, 0
@@ -66,4 +66,9 @@ func DeleteClassTicket(classTicketObject *models.ClassTicket, err *models.Custom
 	if result.Error != nil {
 		err.FailDeleteDataInDB(result.Error)
 	}
+}
+
+func ChangeClassTicketStatus(ticketID int, status string) error {
+	err := configs.DB.Model(models.ClassTicket{}).Where("id = ?", ticketID).Update("status", status).Error
+	return err
 }

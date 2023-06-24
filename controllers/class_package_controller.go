@@ -18,12 +18,12 @@ func GetClassPackagesController(c echo.Context) error {
 
 	// pagination
 	page.PageString = c.QueryParam("page")
-	page.ConvertPageStringToINT(&err)
+	page.PageSizeString = c.QueryParam("page_size")
+	page.Paginate(&err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
-	page.CalcOffsetLimit()
 
 	//quey params
 	params.PeriodString = c.QueryParam("period")
@@ -44,18 +44,20 @@ func GetClassPackagesController(c echo.Context) error {
 			return c.JSON(response.StatusCode, response)
 		}
 
-		classPackages, totalData = database.GetClassPackagesWithParams(query, &page, &err)
+		classPackages, response.DataShown = database.GetClassPackagesWithParams(query, &page, &err)
 		if err.IsError() {
 			response.ErrorOcurred(&err)
 			return c.JSON(response.StatusCode, response)
 		}
 	} else {
-		classPackages, totalData = database.GetClassPackages(page.Offset, page.Limit, &err)
+		classPackages, response.DataShown = database.GetClassPackages(&page, &err)
 		if err.IsError() {
 			response.ErrorOcurred(&err)
 			return c.JSON(response.StatusCode, response)
 		}
 	}
+
+	totalData = database.CountTotalData("class_packages")
 
 	response.Success("success get class packages", page.Page, totalData, classPackages)
 	return c.JSON(response.StatusCode, response)

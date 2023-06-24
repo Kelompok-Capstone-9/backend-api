@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"gofit-api/lib/database"
 	"gofit-api/middlewares"
 	"gofit-api/models"
@@ -20,34 +21,31 @@ func GetMembershipsController(c echo.Context) error {
 	var totalData int
 
 	param.Page.PageString = c.QueryParam("page")
-	param.Page.ConvertPageStringToINT(&err)
+	param.Page.PageSizeString = c.QueryParam("page_size")
+	param.Page.Paginate(&err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
-	param.Page.CalcOffsetLimit()
 	param.Name = c.QueryParam("name")
 	switch {
 	case param.Name != "":
 		param.NameQueryForm() // change name paramater to query form e.g: andy to %andy%
-		memberships, totalData = database.GetMembershipByUserName(param.Name, &err)
+		memberships, response.DataShown = database.GetMembershipByUserName(param.Name, &err)
 		if err.IsError() {
 			response.ErrorOcurred(&err)
 			return c.JSON(response.StatusCode, response)
 		}
 	default:
-		memberships, totalData = database.GetMemberships(param.Page.Offset, param.Page.Limit, &err)
+		memberships, response.DataShown = database.GetMemberships(&param.Page, &err)
 		if err.IsError() {
 			response.ErrorOcurred(&err)
 			return c.JSON(response.StatusCode, response)
 		}
 	}
-	// memberships, totalData := database.GetMemberships(param.Page.Offset, param.Page.Limit, &err)
-	// if err.IsError() {
-	// 	response.ErrorOcurred(&err)
-	// 	return c.JSON(response.StatusCode, response)
-	// }
+
+	totalData = database.CountTotalData("memberships")
 
 	response.Success("Successfully retrieved memberships", param.Page.Page, totalData, memberships)
 	return c.JSON(http.StatusOK, response)
@@ -247,8 +245,7 @@ func DeleteMembershipController(c echo.Context) error {
 }
 
 func JoinMembershipController(c echo.Context) error {
-
-	var response models.GeneralResponse
+	var response models.ProductResponse
 	var err models.CustomError
 
 	var readableMembership models.ReadableMembership
@@ -265,6 +262,10 @@ func JoinMembershipController(c echo.Context) error {
 
 	plan.ID = uint(planID.ID)
 	database.GetPlan(&plan, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
 
 	membershipObject.UserID = uint(userID)
 	membershipObject.PlanID = plan.ID
@@ -282,6 +283,22 @@ func JoinMembershipController(c echo.Context) error {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
+
+	transactionObject := models.Transaction{
+		TransactionCode: fmt.Sprintf("TM%d", membershipObject.ID),
+		Product:         models.MembershipProduct,
+		ProductID:       int(membershipObject.ID),
+		Amount:          int(membershipObject.Plan.Price),
+		Status:          string(models.Pending),
+	}
+	database.CreateTransaction(&transactionObject, &err)
+	if err.IsError() {
+		response.ErrorOcurred(&err)
+		return c.JSON(response.StatusCode, response)
+	}
+
+	transactionLink := fmt.Sprintf("/transactions/pay/%s", transactionObject.TransactionCode)
+	response.TransactionCreated(transactionObject.TransactionCode, "transaction created continue to payment to activate your membership", transactionLink)
 
 	membershipObject.ToReadableMembership(&readableMembership)
 

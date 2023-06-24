@@ -1,7 +1,6 @@
 package models
 
 import (
-	"gofit-api/constants"
 	"net/http"
 )
 
@@ -29,20 +28,24 @@ type (
 		Data             interface{} `json:"data"`
 	}
 
+	ProductTransactionInfoResponse struct {
+		TransactionCode string `json:"transaction_code"`
+		Message         string `json:"message"`
+		TransactionLink string `json:"transaction_link"`
+	}
+
+	ProductResponse struct {
+		ResponseMetadata               `json:"metadata"`
+		ProductTransactionInfoResponse `json:"transaction_info"`
+		Data                           interface{} `json:"data"`
+	}
+
 	LoginResponse struct {
 		ResponseMetadata `json:"metadata"`
 		Data             interface{} `json:"data"`
 		Token            string      `json:"token"`
 	}
 )
-
-func (p *Pagination) CalculateShownData() {
-	if p.TotalData < constants.LIMIT {
-		p.DataShown = p.TotalData
-	} else {
-		p.DataShown = constants.LIMIT
-	}
-}
 
 func (rm *ResponseMetadata) ErrorOcurred(err *CustomError) {
 	rm.StatusCode = err.StatusCode
@@ -56,13 +59,24 @@ func (glr *GeneralListResponse) Success(message string, page, totalData int, dat
 	glr.Page = page
 	glr.TotalData = totalData
 	glr.Data = data
-	glr.CalculateShownData()
 }
 
 func (gr *GeneralResponse) Success(statusCode int, message string, data interface{}) {
 	gr.StatusCode = statusCode
 	gr.Message = message
 	gr.Data = data
+}
+
+func (ptir *ProductTransactionInfoResponse) TransactionCreated(transactionCode string, transactionMessage string, transactionLink string) {
+	ptir.TransactionCode = transactionCode
+	ptir.Message = transactionMessage
+	ptir.TransactionLink = transactionLink
+}
+
+func (ttr *ProductResponse) Success(statusCode int, message string, data interface{}) {
+	ttr.StatusCode = statusCode
+	ttr.ResponseMetadata.Message = message
+	ttr.Data = data
 }
 
 func (lr *LoginResponse) Success(message string, data interface{}, token string) {

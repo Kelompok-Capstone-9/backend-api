@@ -18,27 +18,29 @@ func GetLocationsController(c echo.Context) error {
 	var err models.CustomError
 
 	page.PageString = c.QueryParam("page")
-	page.ConvertPageStringToINT(&err)
+	page.PageSizeString = c.QueryParam("page_size")
+	page.Paginate(&err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
-	page.CalcOffsetLimit()
 
 	if params.ParamIsSet() {
 		query := params.DecodeToQueryString()
-		locations, totalData = database.GetLocationsWithParams(query, &page, &err)
+		locations, response.Pagination.DataShown = database.GetLocationsWithParams(query, &page, &err)
 		if err.IsError() {
 			response.ErrorOcurred(&err)
 			return c.JSON(response.StatusCode, response)
 		}
 	} else {
-		locations, totalData = database.GetLocations(page.Offset, page.Limit, &err)
+		locations, response.Pagination.DataShown = database.GetLocations(&page, &err)
 		if err.IsError() {
 			response.ErrorOcurred(&err)
 			return c.JSON(response.StatusCode, response)
 		}
 	}
+
+	totalData = database.CountTotalData("locations")
 
 	response.Success("success get locations", page.Page, totalData, locations)
 	return c.JSON(response.StatusCode, response)

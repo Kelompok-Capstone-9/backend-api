@@ -21,19 +21,24 @@ func GetUsersController(c echo.Context) error {
 	var page models.Pages
 	var err models.CustomError
 
+	var users []models.ReadableUser
+	var totalData int
+
 	page.PageString = c.QueryParam("page")
-	page.ConvertPageStringToINT(&err)
+	page.PageSizeString = c.QueryParam("page_size")
+	page.Paginate(&err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
 
-	page.CalcOffsetLimit()
-	users, totalData := database.GetUsers(page.Offset, page.Limit, &err)
+	users, response.DataShown = database.GetUsers(&page, &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
+
+	totalData = database.CountTotalData("users")
 
 	response.Success("success get users", page.Page, totalData, users)
 	return c.JSON(response.StatusCode, response)
@@ -385,7 +390,7 @@ func ForgotPasswordController(c echo.Context) error {
 	} else {
 		_, emailError := mail.ParseAddress(otp.Email)
 		if emailError != nil {
-			err.NewError(http.StatusBadRequest, errors.New("" + otp.Email + " is not an email"), "invalid email")
+			err.NewError(http.StatusBadRequest, errors.New(""+otp.Email+" is not an email"), "invalid email")
 			response.ErrorOcurred(&err)
 			return c.JSON(response.StatusCode, response)
 		}

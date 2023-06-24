@@ -2,7 +2,6 @@ package models
 
 import (
 	"fmt"
-	"gofit-api/constants"
 	"strconv"
 )
 
@@ -201,27 +200,40 @@ func (i *IDParameter) ConvertIDStringToINT(err *CustomError) {
 }
 
 type Pages struct {
-	PageString string
-	Page       int
-	Offset     int
-	Limit      int
+	PageString     string
+	Page           int
+	PageSizeString string
+	PageSize       int
+	Offset         int
 }
 
-func (p *Pages) ConvertPageStringToINT(err *CustomError) {
+func (p *Pages) Paginate(err *CustomError) {
 	if p.PageString != "" {
 		p.Page, err.ErrorMessage = strconv.Atoi(p.PageString)
 		if err.ErrorMessage != nil {
 			err.StatusCode = 400
 			err.ErrorReason = "invalid page parameter :" + p.PageString
 		}
-	} else {
+	}
+	if p.Page <= 0 {
 		p.Page = 1
 	}
-}
 
-func (p *Pages) CalcOffsetLimit() {
-	p.Limit = constants.LIMIT
-	if p.Page > 1 {
-		p.Offset = p.Page * p.Limit
+	if p.PageSizeString != "" {
+		p.PageSize, err.ErrorMessage = strconv.Atoi(p.PageSizeString)
+		if err.ErrorMessage != nil {
+			err.StatusCode = 400
+			err.ErrorReason = "invalid page size parameter :" + p.PageSizeString
+		}
 	}
+
+	switch {
+	case p.PageSize > 100:
+		p.PageSize = 100
+	case p.PageSize <= 0:
+		p.PageSize = 10
+	}
+
+	p.Offset = (p.Page - 1) * p.PageSize
+
 }

@@ -61,6 +61,8 @@ func InitRoute(e *echo.Echo) {
 	AddUserRoutes(e)
 	AddPlanRoutes(e)
 	AddMembershipRoutes(e)
+	AddPaymentMethodRoutes(e)
+	AddTransactionRoutes(e)
 	AddLocationRoutes(e)
 	AddClassRoutes(e)
 	AddClassPackageRoutes(e)

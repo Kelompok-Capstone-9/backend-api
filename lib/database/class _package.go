@@ -9,10 +9,10 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetClassPackages(offset, limit int, err *models.CustomError) ([]models.ReadableClassPackage, int) {
+func GetClassPackages(page *models.Pages, err *models.CustomError) ([]models.ReadableClassPackage, int) {
 	var classpackageObjectList []models.ClassPackage
 
-	result := configs.DB.Offset(offset).Limit(limit).Preload("Class.Location").Find(&classpackageObjectList)
+	result := configs.DB.Scopes(PaginatedQuery(page)).Preload("Class.Location").Find(&classpackageObjectList)
 	if result.Error != nil {
 		err.FailRetrieveDataFromDB(result.Error)
 		return nil, 0
@@ -33,12 +33,12 @@ func GetClassPackagesOnly(offset, limit int, err *models.CustomError) ([]models.
 	return models.ToReadableClassPackageOnlyList(classpackageObjectList, err), int(result.RowsAffected)
 }
 
-func GetClassPackagesWithParams(query string,page *models.Pages, err *models.CustomError) ([]models.ReadableClassPackage, int) {
+func GetClassPackagesWithParams(query string, page *models.Pages, err *models.CustomError) ([]models.ReadableClassPackage, int) {
 	var classPackageObjectList []models.ClassPackage
-	
+
 	fmt.Println(query)
 
-	result := configs.DB.Where(query).Offset(page.Offset).Limit(page.Limit).Find(&classPackageObjectList)
+	result := configs.DB.Where(query).Scopes(PaginatedQuery(page)).Find(&classPackageObjectList)
 	if result.Error != nil {
 		err.FailRetrieveDataFromDB(result.Error)
 		return nil, 0
