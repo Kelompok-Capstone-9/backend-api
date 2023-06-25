@@ -264,6 +264,7 @@ func JoinMembershipController(c echo.Context) error {
 	database.GetPlan(&plan, &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
+		response.ErrorReason = "plan doesn't exists. make sure insert the right ID"
 		return c.JSON(response.StatusCode, response)
 	}
 

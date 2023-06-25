@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gofit-api/configs"
 	"gofit-api/models"
+	"time"
 
 	"github.com/jasonlvhit/gocron"
 )
@@ -12,25 +13,18 @@ import (
 func CheckMembershipActivity() {
 	inactiveMembershipList := []models.Membership{}
 	membershipList := []models.Membership{}
-	configs.DB.Where("is_active = true").Find(&membershipList)
+	configs.DB.Where("end_date > ?", time.Now()).Find(&membershipList)
 
 	if len(membershipList) != 0 {
 		for _, membership := range membershipList {
-
-			isActive := membership.CheckMembershipActivity()
-
-			if isActive {
-				continue
-			} else {
-				membership.IsActive = isActive
-				inactiveMembershipList = append(inactiveMembershipList, membership)
-			}
+			membership.IsActive = false
 		}
 	}
 
 	if len(inactiveMembershipList) != 0 {
-		fmt.Println("found " , len(inactiveMembershipList) , " expired membership")
+		fmt.Println("found ", len(inactiveMembershipList), " expired membership")
 		configs.DB.Save(&inactiveMembershipList)
+		inactiveMembershipList = nil
 	}
 }
 

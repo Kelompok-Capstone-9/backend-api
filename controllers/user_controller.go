@@ -285,7 +285,7 @@ func LoginUserController(c echo.Context) error {
 	}
 
 	var token string
-	token, err.ErrorMessage = middlewares.CreateToken(int(userObject.ID), userObject.Email, membershipObject.CheckMembershipActivity(), userObject.IsAdmin)
+	token, err.ErrorMessage = middlewares.CreateToken(int(userObject.ID), userObject.Email, membershipObject.IsActive, userObject.IsAdmin)
 	if err.IsError() {
 		err.StatusCode = 500
 		err.ErrorReason = "fail to create jwt token"

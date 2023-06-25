@@ -79,7 +79,7 @@ func (rm *ReadableMembership) InsertID(itemIDString string, err *CustomError) {
 // IsActive checks if the membership is active based on current date
 func (m *Membership) CheckMembershipActivity() bool {
 	currentTime := time.Now()
-	return m.StartDate.After(currentTime) && currentTime.Before(m.EndDate)
+	return currentTime.Before(m.EndDate)
 }
 
 func (rm *ReadableMembership) ToMembershipObject(membershipObject *Membership, err *CustomError) {

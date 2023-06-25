@@ -343,7 +343,7 @@ func PayController(c echo.Context) error {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	case "credit_card":
-		paymentMethodObject.Name = "gopay"
+		paymentMethodObject.Name = "credit_card"
 		database.FirstOrCreatePaymentMethod(&paymentMethodObject, &err)
 		if err.IsError() {
 			response.ErrorOcurred(&err)
@@ -418,6 +418,7 @@ func PayController(c echo.Context) error {
 				response.ErrorOcurred(&err)
 				return c.JSON(response.StatusCode, response)
 			}
+			fmt.Println(membershipObject.User.Name, " => ", membershipObject.IsActive)
 		}
 	case "deny", "cancel", "expire":
 		// update transaction status to cancel in database
