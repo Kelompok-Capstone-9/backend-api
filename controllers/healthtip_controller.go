@@ -18,14 +18,14 @@ func GetHealthtipsController(c echo.Context) error {
 	var err models.CustomError
 
 	params.Page.PageString = c.QueryParam("page")
-	params.Page.ConvertPageStringToINT(&err)
+	params.Page.PageSizeString = c.QueryParam("page_size")
+	params.Page.Paginate(&err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
 	}
-	params.Page.CalcOffsetLimit()
 
-	healthtips, totalData = database.GetHealthtips(params.Page.Offset, params.Page.Limit, &err)
+	healthtips, totalData = database.GetHealthtips(params.Page.Offset, params.Page.PageSize, &err)
 	if err.IsError() {
 		response.ErrorOcurred(&err)
 		return c.JSON(response.StatusCode, response)
